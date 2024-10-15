@@ -79,6 +79,9 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// TODO: implement help modal
 		// I like the way `ncdu` presents its help, but `top` and `tmux` just
 		// overwrite the current view, and that'll probably be easier.
+		//
+		// Looks like we can't do modals with BubbleTea:
+		// https://github.com/charmbracelet/bubbletea/issues/79
 
 		case "s", "/":
 		// TODO: implement a search/filter system (this is the biggest feature)
