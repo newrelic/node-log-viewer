@@ -1,0 +1,11 @@
+.idea/
+.task/
+local/
+dist/
+vendor/
+
+nrlv
+*.disabled
+*.log
+
+coverage.*
