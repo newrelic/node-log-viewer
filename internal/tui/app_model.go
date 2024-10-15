@@ -72,7 +72,44 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 
-		// TODO: implement pgup/pgdwn
+		case "g":
+		// TODO: implement "go to line"?
+
+		case "h", "?":
+		// TODO: implement help modal
+		// I like the way `ncdu` presents its help, but `top` and `tmux` just
+		// overwrite the current view, and that'll probably be easier.
+
+		case "s", "/":
+		// TODO: implement a search/filter system (this is the biggest feature)
+		// I'm thinking that the lines viewer could have a new "originalLines"
+		// property where we can store the originally processed lines from the file.
+		// Then we can replace the sourceLines with a filtered set of lines based
+		// upon the outcome of the search and all of the implemented navigation
+		// and inspection operations will continue to "just work."
+		//
+		// What I'm not sure about is how we implement a search system. I suppose
+		// we can add another interface method like `DoSearch` that accepts some
+		// sort of search definition struct. Non-searchable viewers would need to
+		// at least stub out the method.
+		//
+		// I'm also concerned about the memory usage. The app design as it is, is
+		// already subject to consuming large amounts of memory based upon how
+		// many log lines are present in the parsed file. We're just reading the
+		// whole thing into memory and then working with it. If we are going to
+		// duplicate a subset of the log lines, that will definitely increase our
+		// memory usage. The only solution that I have been able to think of so far
+		// is to read everything into a temporary sqlite database and work against
+		// that. It'll require significant refactoring, but it might be the way we
+		// need to go. I'm open to ideas here. Another might be to memory map the
+		// original log file somehow, but I wouldn't know where to begin with that.
+
+		case "pgdown":
+		// TODO: implement page down
+
+		case "pgup":
+		// TODO: implement page up
+
 		case "down", "j":
 			m.MainView.ScrollDown(1)
 			m.StatusLine.Text = m.MainView.Status()
