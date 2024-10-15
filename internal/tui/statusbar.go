@@ -11,7 +11,6 @@ type StatusBar struct {
 }
 
 func NewStatusBar(width int, height int, status string) StatusBar {
-	// TODO: add different fields to the status bar? e.g. a number of lines field and a message field?
 	return StatusBar{
 		Text: status,
 		Style: lipgloss.

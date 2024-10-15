@@ -5,6 +5,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jsumners-nr/nr-node-logviewer/internal/common"
 	log "github.com/jsumners-nr/nr-node-logviewer/internal/log"
+	"github.com/spf13/cast"
+	"math"
 )
 
 // ViewModel represents any model being used as the "top" portion of the main
@@ -34,6 +36,7 @@ type AppModel struct {
 
 	MainView   ViewModel
 	StatusLine StatusBar
+	InfoLine   InfoBar
 
 	// views represents navigation through the application. For example, when a
 	// log line is selected, a new view will be returned that shows the details
@@ -48,6 +51,7 @@ func NewAppModel(sourceLines []common.Envelope, logger *log.Logger) AppModel {
 		logger:     logger,
 		MainView:   NewLinesViewer(sourceLines, logger),
 		StatusLine: NewStatusBar(1, 1, "initialized"),
+		InfoLine:   NewInfoBar(1, 1),
 	}
 }
 
@@ -148,10 +152,17 @@ func (m AppModel) View() string {
 		return ""
 	}
 
+	bottomBar := lipgloss.JoinHorizontal(
+		lipgloss.Bottom,
+		m.StatusLine.View(),
+		m.InfoLine.View(),
+	)
+
 	return lipgloss.JoinVertical(
 		lipgloss.Top,
 		m.MainView.View(),
-		m.StatusLine.View(),
+		bottomBar,
+		//m.StatusLine.View(),
 	)
 }
 
@@ -159,8 +170,16 @@ func setStyle(model *AppModel, width int, height int) {
 	model.MainView.SetStyle(
 		model.MainView.GetStyle().Width(width).Height(height - 1),
 	)
+
+	statusWidth := cast.ToInt(math.Floor(float64(width) * 0.8))
+	infoWidth := width - statusWidth
+
 	model.StatusLine.SetStyle(
-		model.StatusLine.GetStyle().Width(width),
+		model.StatusLine.GetStyle().Width(statusWidth),
 	)
 	model.StatusLine.Text = model.MainView.Status()
+
+	model.InfoLine.SetStyle(
+		model.InfoLine.GetStyle().Width(infoWidth),
+	)
 }
