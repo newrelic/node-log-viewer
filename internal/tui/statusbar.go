@@ -18,7 +18,8 @@ func NewStatusBar(width int, height int, status string) StatusBar {
 			Height(height).
 			Width(width).
 			Background(lipgloss.Color("#cccccc")).
-			Foreground(lipgloss.Color("#111111")),
+			Foreground(lipgloss.Color("#111111")).
+			PaddingLeft(2),
 	}
 }
 
