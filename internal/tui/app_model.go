@@ -110,6 +110,18 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// that. It'll require significant refactoring, but it might be the way we
 		// need to go. I'm open to ideas here. Another might be to memory map the
 		// original log file somehow, but I wouldn't know where to begin with that.
+		//
+		// 2024-10-16: The more I think about it, the more I think using the sqlite
+		// database is going to be right direction. If we do that, then we can
+		// support caching of a file via automatic and manual naming of the cache
+		// file, e.g.:
+		//
+		// nrlv -f newrelic_agent.log --keep-cache [--cache-file=something.sqlite]
+		//
+		// If `--cache-file` is not provided, we'd checksum the `newrelic_agent.log`
+		// file in order to generate the name for the cache file. Then, when we
+		// boot up, we can look in the temporary directory for an existing cache
+		// file and skip parsing of the log file if the cache exists.
 
 		case "pgdown":
 		// TODO: implement page down
