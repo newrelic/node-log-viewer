@@ -72,6 +72,13 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		setStyle(&m, msgType.Width, msgType.Height)
 
 	case tea.KeyMsg:
+		// We _could_ add a default case that passes the message to child views,
+		// but then it gets difficult to synchronize view updates. For example,
+		// if we pass a message to a view, and it updates the background color of
+		// the view, then we never see that change until we synchronize changes.
+		// At least for now, we will simply keep adding new view interface methods
+		// and stubbing them on out views that don't need to support whatever
+		// functionality the method provides.
 		switch msgType.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
