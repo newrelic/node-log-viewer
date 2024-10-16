@@ -5,14 +5,27 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/gookit/goutil/arrutil"
 	"github.com/jsumners-nr/nr-node-logviewer/internal/log"
+	"github.com/spf13/cast"
 	flag "github.com/spf13/pflag"
 	"log/slog"
 	"strings"
 )
 
 type appFlags struct {
-	inputFile string
-	logLevel  *LevelFlag
+	inputFile     string
+	logLevel      *LevelFlag
+	cacheFile     string
+	keepCacheFile bool
+}
+
+func (a *appFlags) String() string {
+	return fmt.Sprintf(
+		"{ inputFile: %s, logLevel: %s, cacheFile: %s, keepCacheFile: %s }",
+		a.inputFile,
+		a.logLevel.String(),
+		a.cacheFile,
+		cast.ToString(a.keepCacheFile),
+	)
 }
 
 var flags = appFlags{}
@@ -45,6 +58,29 @@ func createAndParseFlags(args []string) error {
 		"l",
 		"Set the logging level to one of: "+strings.Join(flags.logLevel.allowedValues, ", ")+".",
 	)
+
+	flagSet.StringVarP(
+		&flags.cacheFile,
+		"cache-file",
+		"c",
+		"",
+		heredoc.Doc(`
+			Full path and name to a file for the application to store parsed logs in.
+			When not specified, a file will be created in the system's temporary
+			directory. Unless --keep-cache is provided, the any cache file will be
+			removed when the application ends.
+		`),
+	)
+
+	flagSet.BoolVarP(
+		&flags.keepCacheFile,
+		"keep-cache",
+		"k",
+		false,
+		"Keep the cache file that parsed logs are stored in.",
+	)
+
+	// TODO: add a force-parse flag that will purge any cache and force parsing of the log file
 
 	// TODO: add a flag that will filter messages based on log type, e.g. "error" logs
 
