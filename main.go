@@ -123,7 +123,7 @@ func run(args []string) error {
 	logger.Debug("finished reading log lines from input")
 
 	logger.Debug("starting tui")
-	appModel := tui.NewAppModel(lines, logger)
+	appModel := tui.NewAppModel(db, logger)
 	app := tea.NewProgram(appModel, tea.WithAltScreen(), tea.WithMouseAllMotion())
 	_, err = app.Run()
 	if err != nil {

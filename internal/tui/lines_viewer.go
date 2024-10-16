@@ -5,6 +5,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jsumners-nr/nr-node-logviewer/internal/common"
+	"github.com/jsumners-nr/nr-node-logviewer/internal/database"
 	log "github.com/jsumners-nr/nr-node-logviewer/internal/log"
 )
 
@@ -27,10 +28,16 @@ type LinesViewer struct {
 	Style lipgloss.Style
 
 	logger *log.Logger
+	db     *database.LogsDatabase
 
 	cursor      int
 	currentView string
 	needsUpdate bool
+
+	// TODO: we'll need some more tracking variables to keep track of the total
+	// lines in the set of all lines, the total lines available as the result of
+	// a search, and others.
+	linesInView []common.Envelope
 
 	sourceLines []common.Envelope
 	totalLines  int
@@ -38,7 +45,7 @@ type LinesViewer struct {
 	pageEnd     int
 }
 
-func NewLinesViewer(sourceLines []common.Envelope, logger *log.Logger) *LinesViewer {
+func NewLinesViewer(db *database.LogsDatabase, logger *log.Logger) *LinesViewer {
 	viewer := &LinesViewer{
 		Style: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#cccccc")).
@@ -47,12 +54,13 @@ func NewLinesViewer(sourceLines []common.Envelope, logger *log.Logger) *LinesVie
 			Height(1),
 
 		logger: logger,
+		db:     db,
 
 		cursor:      0,
 		needsUpdate: true,
 
-		sourceLines: sourceLines,
-		totalLines:  len(sourceLines),
+		sourceLines: []common.Envelope{},
+		totalLines:  0,
 		pageStart:   0,
 		pageEnd:     10,
 	}
@@ -66,13 +74,33 @@ func (v *LinesViewer) Init() tea.Cmd {
 }
 
 func (v *LinesViewer) Update(tea.Msg) (tea.Model, tea.Cmd) {
+	// TODO: we need logic to determine if we really need to re-query the database
+	// or if we can keep the state as-is. Every time we query the database, we
+	// need to reparse the log line, as the database does not store any Go binary
+	// representations (which, really would need a reparse through [gob] anyway).
+
+	numViewLines := v.Style.GetHeight()
+	if len(v.linesInView) == numViewLines {
+		// We don't need to update anything.
+		return v, nil
+	}
+
+	result, err := v.db.Select(numViewLines)
+	if err != nil {
+		v.logger.Error("could not update lines viewer state", "error", err)
+		return v, nil
+	}
+	v.linesInView = result.Lines
+	v.pageStart = result.StartRowId
+	v.pageEnd = result.EndRowId
+
 	return v, nil
 }
 
 func (v *LinesViewer) View() string {
-	if v.needsUpdate == false {
-		return v.currentView
-	}
+	//if v.needsUpdate == false {
+	//	return v.currentView
+	//}
 
 	if v.pageEnd < 1 {
 		// Sometimes we get a screen size of 0x0, which results in pageEnd=-1.
@@ -80,7 +108,7 @@ func (v *LinesViewer) View() string {
 		return ""
 	}
 
-	linesInView := v.sourceLines[v.pageStart:v.pageEnd]
+	linesInView := v.linesInView
 	viewContent := ""
 	for i, line := range linesInView {
 		if v.cursor == i {
@@ -117,31 +145,48 @@ func (v *LinesViewer) SetStyle(style lipgloss.Style) {
 }
 
 func (v *LinesViewer) ScrollDown(numLines int) {
-	if v.cursor+1 == v.totalLines {
-		v.logger.Trace("end of list, scrolling down not possible")
-		// TODO: check what happens when trying to cursor to the last line in the log file
+	maxLine := v.Style.GetHeight()
+	if v.cursor == maxLine {
+		// Get new buffer from [start+1 : end+1]
 		return
 	}
-	if v.cursor+1 > v.pageEnd-1 {
+
+	if v.cursor < maxLine {
 		v.logger.Trace(
-			fmt.Sprintf("moving cursor down and adjusting lines in view by %d lines", 1),
+			fmt.Sprintf("moving cursor down %d lines", 1),
 			"cursor_pos", v.cursor,
 			"new_cursor_pos", v.cursor+1,
 		)
-		v.pageStart += 1
-		v.pageEnd += 1
+		v.cursor += 1
 		v.needsUpdate = true
 		return
 	}
-	// Cursor is not at the last line. Increment it so the view will move it
-	// one line down.
-	v.logger.Trace(
-		fmt.Sprintf("moving cursor down %d lines", 1),
-		"cursor_pos", v.cursor,
-		"new_cursor_pos", v.cursor+1,
-	)
-	v.cursor += 1
-	v.needsUpdate = true
+
+	//if v.cursor+1 == v.totalLines {
+	//	v.logger.Trace("end of list, scrolling down not possible")
+	//	// TODO: check what happens when trying to cursor to the last line in the log file
+	//	return
+	//}
+	//if v.cursor+1 > v.pageEnd-1 {
+	//	v.logger.Trace(
+	//		fmt.Sprintf("moving cursor down and adjusting lines in view by %d lines", 1),
+	//		"cursor_pos", v.cursor,
+	//		"new_cursor_pos", v.cursor+1,
+	//	)
+	//	v.pageStart += 1
+	//	v.pageEnd += 1
+	//	v.needsUpdate = true
+	//	return
+	//}
+	//// Cursor is not at the last line. Increment it so the view will move it
+	//// one line down.
+	//v.logger.Trace(
+	//	fmt.Sprintf("moving cursor down %d lines", 1),
+	//	"cursor_pos", v.cursor,
+	//	"new_cursor_pos", v.cursor+1,
+	//)
+	//v.cursor += 1
+	//v.needsUpdate = true
 }
 
 func (v *LinesViewer) ScrollUp(numLines int) {

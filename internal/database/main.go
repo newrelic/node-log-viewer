@@ -11,6 +11,7 @@ import (
 	migrateFS "github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/jsumners-nr/nr-node-logviewer/internal/database/migrations"
 	"github.com/jsumners-nr/nr-node-logviewer/internal/log"
+	"github.com/jsumners/go-rfc3339"
 
 	// We have to load the sqlite driver without using it because Go's stdlib
 	// database system relies on import side effects for loading database drivers.
@@ -28,6 +29,15 @@ type DbParams struct {
 	DatabaseFilePath string
 	DoMigration      bool
 	Logger           *log.Logger
+}
+
+type DbRow struct {
+	RowId     int
+	Version   int
+	Time      rfc3339.DateTime
+	Component string
+	Message   string
+	Original  string
 }
 
 func New(params DbParams) (*LogsDatabase, error) {

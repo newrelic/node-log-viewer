@@ -3,7 +3,7 @@ package tui
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/jsumners-nr/nr-node-logviewer/internal/common"
+	"github.com/jsumners-nr/nr-node-logviewer/internal/database"
 	log "github.com/jsumners-nr/nr-node-logviewer/internal/log"
 	"github.com/spf13/cast"
 	"math"
@@ -31,6 +31,7 @@ type ViewModel interface {
 // to render the application.
 type AppModel struct {
 	logger            *log.Logger
+	db                *database.LogsDatabase
 	receivedSizeEvent bool
 	WindowSize        tea.WindowSizeMsg
 
@@ -46,10 +47,11 @@ type AppModel struct {
 	views []ViewModel
 }
 
-func NewAppModel(sourceLines []common.Envelope, logger *log.Logger) AppModel {
+func NewAppModel(db *database.LogsDatabase, logger *log.Logger) AppModel {
 	return AppModel{
 		logger:     logger,
-		MainView:   NewLinesViewer(sourceLines, logger),
+		db:         db,
+		MainView:   NewLinesViewer(db, logger),
 		StatusLine: NewStatusBar(1, 1, "initialized"),
 		InfoLine:   NewInfoBar(1, 1),
 	}
@@ -60,6 +62,12 @@ func (m AppModel) Init() tea.Cmd {
 }
 
 func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// We need to pass the update to all child views so that they can update
+	// their state.
+	m.MainView.Update(msg)
+	m.StatusLine.Update(msg)
+	m.InfoLine.Update(msg)
+
 	switch msgType := msg.(type) {
 
 	// tea.WindowSizeMsg is fired when the view is first rendered and on every
@@ -181,7 +189,6 @@ func (m AppModel) View() string {
 		lipgloss.Top,
 		m.MainView.View(),
 		bottomBar,
-		//m.StatusLine.View(),
 	)
 }
 
