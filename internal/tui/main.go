@@ -2,12 +2,14 @@ package tui
 
 import (
 	"github.com/jsumners-nr/nr-node-logviewer/internal/common"
+	"github.com/jsumners-nr/nr-node-logviewer/internal/database"
 	"github.com/jsumners-nr/nr-node-logviewer/internal/log"
 	"github.com/rivo/tview"
 )
 
 type TUI struct {
 	App    *tview.Application
+	db     *database.LogsDatabase
 	logger *log.Logger
 
 	// root is the overall application frame.
@@ -39,9 +41,10 @@ type TUI struct {
 	prevPageStatus string
 }
 
-func NewTUI(logLines []common.Envelope, logger *log.Logger) TUI {
+func NewTUI(logLines []common.Envelope, db *database.LogsDatabase, logger *log.Logger) TUI {
 	tui := TUI{
 		App:    tview.NewApplication(),
+		db:     db,
 		logger: logger,
 		lines:  logLines,
 		pages:  tview.NewPages(),
@@ -50,6 +53,7 @@ func NewTUI(logLines []common.Envelope, logger *log.Logger) TUI {
 	tui.initLineDetailView()
 	tui.initLinesTableView()
 	tui.initGotoLineModal()
+	tui.initSearchModal()
 	tui.initStatusBarView()
 	tui.initRootView()
 

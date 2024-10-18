@@ -28,10 +28,17 @@ func (t *TUI) initLinesTableView() {
 func (t *TUI) linesTableInputHandler(event *tcell.EventKey) *tcell.EventKey {
 	t.logger.Trace("received key event in lines table view", "key", event.Name(), "rune", event.Rune())
 
+	// TODO: modals are retaining state between invocations, they shouldn't
 	switch event.Key() {
 	case tcell.KeyCtrlG:
 		t.logger.Trace("showing go to line modal")
 		t.pages.ShowPage(PAGE_GOTO_LINE).SendToFront(PAGE_GOTO_LINE)
+		return nil
+
+	case tcell.KeyCtrlS:
+		t.logger.Trace("showing search modal")
+		t.pages.ShowPage(PAGE_SEARCH_FORM).SendToFront(PAGE_SEARCH_FORM)
+		return nil
 	}
 	return event
 }

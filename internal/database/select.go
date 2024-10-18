@@ -11,7 +11,6 @@ import (
 const selectSql = `
 select rowid, original
 from logs_fts
-order by rowid asc
 `
 
 type SelectResult struct {
@@ -21,19 +20,28 @@ type SelectResult struct {
 }
 
 func (l *LogsDatabase) GetAllLogs() (*SelectResult, error) {
-	return l.Select(0)
+	return l.Select(0, "")
 }
 
-func (l *LogsDatabase) Select(limit int) (*SelectResult, error) {
+func (l *LogsDatabase) Search(term string) (*SelectResult, error) {
+	return l.Select(0, fmt.Sprintf("where logs_fts match '%s'", term))
+}
+
+func (l *LogsDatabase) Select(limit int, clause string) (*SelectResult, error) {
 	namedParams := make([]any, 0)
 	statement := selectSql
+
+	if clause != "" {
+		statement += "\n" + clause + "\n"
+	}
+
 	if limit > 0 {
 		statement += "\nlimit @limit"
 		namedParams = append(namedParams, sql.Named("limit", limit))
 	}
 
 	rows, err := l.Connection.Query(
-		selectSql,
+		statement,
 		namedParams...,
 	)
 	if err != nil {

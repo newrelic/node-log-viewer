@@ -80,7 +80,7 @@ func run(args []string) error {
 	}
 
 	logger.Debug("starting tui")
-	ui := tui.NewTUI(lines, logger)
+	ui := tui.NewTUI(lines, db, logger)
 	err = ui.App.Run()
 	if err != nil {
 		logger.Error("tui application error", "error", err)

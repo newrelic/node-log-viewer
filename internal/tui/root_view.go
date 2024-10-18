@@ -19,12 +19,12 @@ func (t *TUI) initRootView() {
 //
 // The majority of event handlers should be located on primitives.
 func (t *TUI) rootInputHandler(event *tcell.EventKey) *tcell.EventKey {
-	switch event.Rune() {
-	case 'h':
+	switch event.Key() {
+	case tcell.KeyCtrlH:
 		t.leftStatus.SetText("help invoked")
 		return nil
 
-	case 'q':
+	case tcell.KeyCtrlQ:
 		t.App.Stop()
 		return nil
 	}
