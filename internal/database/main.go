@@ -20,9 +20,10 @@ import (
 )
 
 type LogsDatabase struct {
-	Connection *sql.DB
-	logger     *log.Logger
-	scanner    *sqlscan.API
+	Connection   *sql.DB
+	DatabaseFile string
+	logger       *log.Logger
+	scanner      *sqlscan.API
 }
 
 type DbParams struct {
@@ -43,7 +44,10 @@ type DbRow struct {
 func New(params DbParams) (*LogsDatabase, error) {
 	// TODO: utilize options instead of a params struct
 	// TODO: default to a discard logger
-	result := &LogsDatabase{logger: params.Logger}
+	result := &LogsDatabase{
+		DatabaseFile: params.DatabaseFilePath,
+		logger:       params.Logger,
+	}
 
 	db, err := sql.Open("sqlite", params.DatabaseFilePath)
 	if err != nil {

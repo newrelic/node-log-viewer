@@ -12,7 +12,6 @@ const selectSql = `
 select rowid, original
 from logs_fts
 order by rowid asc
-limit @limit
 `
 
 type SelectResult struct {
@@ -21,10 +20,21 @@ type SelectResult struct {
 	EndRowId   int
 }
 
+func (l *LogsDatabase) GetAllLogs() (*SelectResult, error) {
+	return l.Select(0)
+}
+
 func (l *LogsDatabase) Select(limit int) (*SelectResult, error) {
+	namedParams := make([]any, 0)
+	statement := selectSql
+	if limit > 0 {
+		statement += "\nlimit @limit"
+		namedParams = append(namedParams, sql.Named("limit", limit))
+	}
+
 	rows, err := l.Connection.Query(
 		selectSql,
-		sql.Named("limit", limit),
+		namedParams...,
 	)
 	if err != nil {
 		return nil, err
