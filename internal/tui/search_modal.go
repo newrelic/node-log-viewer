@@ -34,6 +34,7 @@ func (t *TUI) handleSearch(form *tview.Form) {
 	}
 
 	content := NewLinesTableContent(searchResult.Lines)
+	t.lines = searchResult.Lines
 	t.linesTable.SetContent(content)
 	t.pages.HidePage(PAGE_SEARCH_FORM)
 	t.linesScrollStatus(0, 0)
