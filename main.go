@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jsumners-nr/nr-node-logviewer/internal/common"
 	"github.com/jsumners-nr/nr-node-logviewer/internal/database"
 	log "github.com/jsumners-nr/nr-node-logviewer/internal/log"
@@ -123,11 +122,10 @@ func run(args []string) error {
 	logger.Debug("finished reading log lines from input")
 
 	logger.Debug("starting tui")
-	appModel := tui.NewAppModel(db, logger)
-	app := tea.NewProgram(appModel, tea.WithAltScreen(), tea.WithMouseAllMotion())
-	_, err = app.Run()
+	ui := tui.NewTUI(lines, logger)
+	err = ui.App.Run()
 	if err != nil {
-		logger.Error("tui application error", "error", err.Error())
+		logger.Error("tui application error", "error", err)
 		return err
 	}
 
