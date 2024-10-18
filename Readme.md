@@ -17,4 +17,17 @@ selecting the line and pressing the `enter` key.
 
 Note: the log view writes its own internal logs to `stderr`.
 
+## Navigation
+
++ Lines view:
+    * `up arrow`, `j`: move line selection down
+    * `down arrow`, `k`: move line selection up
+    * `enter`: view detail of selected line
+    * `ctrl+s`: open search box
+    * `ctrl+g`: open go to line box
+    * `ctrl+q`, `ctrl+s`: quit the application
++ Line detail view:
+    * up/down navigation is same as lines view
+    * `esc`: return to lines view
+
 [troubleshooting]: https://docs.newrelic.com/docs/apm/agents/nodejs-agent/troubleshooting/generate-trace-log-troubleshooting-nodejs/
