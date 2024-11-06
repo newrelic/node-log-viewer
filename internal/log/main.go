@@ -51,6 +51,12 @@ func New(opts ...Option) (*Logger, error) {
 	return logger, nil
 }
 
+func NewDiscardLogger() *Logger {
+	return &Logger{
+		Logger: slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{})),
+	}
+}
+
 func (l *Logger) Trace(msg string, args ...any) {
 	l.Logger.Log(nil, LevelTrace, msg, args...)
 }
