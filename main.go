@@ -72,7 +72,7 @@ func run(args []string) error {
 			return err
 		}
 
-		lines, err = parseLogFile(inputFile, logger)
+		lines, err = parseLogFile(inputFile, db, logger)
 		if err != nil {
 			logger.Debug("could not parse log file", "error", err)
 			return err
@@ -137,7 +137,7 @@ func openLogFile(filePath string, logger *log.Logger) (io.Reader, error) {
 	return fs.Open(filePath)
 }
 
-func parseLogFile(logFile io.Reader, logger *log.Logger) ([]common.Envelope, error) {
+func parseLogFile(logFile io.Reader, db *database.LogsDatabase, logger *log.Logger) ([]common.Envelope, error) {
 	lines := make([]common.Envelope, 0)
 	scanner := bufio.NewScanner(logFile)
 
@@ -154,6 +154,17 @@ func parseLogFile(logFile io.Reader, logger *log.Logger) ([]common.Envelope, err
 		var envelope *v0.LineEnvelope
 		sourceBytes := scanner.Bytes()
 		sourceString := string(sourceBytes)
+
+		if len(sourceString) == 0 {
+			// Skip empty lines in the source file.
+			continue
+		}
+		if sourceString[0:1] != "{" || sourceString[len(sourceString)-1:] != "}" {
+			// Skip lines that do not look like NDJSON.
+			logger.Warn("skipping parsing of malformed line", "line", sourceString)
+			continue
+		}
+
 		err = json.Unmarshal(sourceBytes, &envelope)
 		if err != nil {
 			logger.Error("failed to parse line", "error", err, "line", sourceString)

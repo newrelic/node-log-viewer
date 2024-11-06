@@ -1,0 +1,8 @@
+{"v":0,"level":10,"name":"newrelic","hostname":"yacht-nodejs-ra15-1-27-0-668785fd7-dhmx6","pid":7,"time":"2024-11-04T22:53:55.642Z","msg":"Wrapping 8 properties on nodule.","component":"WebFrameworkShim","module":"express","framework":"Expressjs"}
+(node:7) NOTE: The AWS SDK for JavaScript (v2) will enter maintenance mode
+on September 8, 2024 and reach end-of-support on September 8, 2025.
+
+Please migrate your code to use AWS SDK for JavaScript (v3).
+For more information, check blog post at https://a.co/cUPnyil
+(Use `node --trace-warnings ...` to show where the warning was created)
+{"v":0,"level":10,"name":"newrelic","hostname":"yacht-nodejs-ra15-1-27-0-668785fd7-dhmx6","pid":7,"time":"2024-11-04T22:53:55.642Z","msg":"Replacing \"all\" with wrapped version","component":"WebFrameworkShim","module":"express","framework":"Expressjs"}
