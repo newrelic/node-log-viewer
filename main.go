@@ -16,6 +16,8 @@ import (
 	"log/slog"
 	"os"
 	"path"
+	"regexp"
+	"strings"
 )
 
 var exitStatus int
@@ -137,6 +139,8 @@ func openLogFile(filePath string, logger *log.Logger) (io.Reader, error) {
 	return fs.Open(filePath)
 }
 
+var matchLeadingK8sTimestamp = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3,}\s+?`)
+
 func parseLogFile(logFile io.Reader, db *database.LogsDatabase, logger *log.Logger) ([]common.Envelope, error) {
 	lines := make([]common.Envelope, 0)
 	scanner := bufio.NewScanner(logFile)
@@ -159,13 +163,24 @@ func parseLogFile(logFile io.Reader, db *database.LogsDatabase, logger *log.Logg
 			// Skip empty lines in the source file.
 			continue
 		}
+		if matchLeadingK8sTimestamp.MatchString(sourceString) == true {
+			// Looks like the line starts with a k8s style timestamp. So we
+			// trim it off.
+			idx := strings.Index(sourceString, "{")
+			if idx == -1 {
+				logger.Warn("line with leading timestamp does not seem to be a log line", "line", sourceString)
+				continue
+			}
+			logger.Debug("trimming leading timestamp", "line", sourceString)
+			sourceString = sourceString[idx:]
+		}
 		if sourceString[0:1] != "{" || sourceString[len(sourceString)-1:] != "}" {
 			// Skip lines that do not look like NDJSON.
 			logger.Warn("skipping parsing of malformed line", "line", sourceString)
 			continue
 		}
 
-		err = json.Unmarshal(sourceBytes, &envelope)
+		err = json.Unmarshal([]byte(sourceString), &envelope)
 		if err != nil {
 			logger.Error("failed to parse line", "error", err, "line", sourceString)
 			return nil, fmt.Errorf("%w: `%s`", err, sourceString)

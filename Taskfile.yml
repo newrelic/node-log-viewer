@@ -21,12 +21,14 @@ tasks:
       - go test ./...
     sources:
       - "**/*.go"
+      - "testdata/**"
 
   test-cov:
     cmds:
       - go test -cover ./...
     sources:
       - "**/*.go"
+      - "testdata/**"
 
   test-cov-html:
     cmds:
@@ -34,3 +36,4 @@ tasks:
       - go tool cover -html=./coverage.out -o ./coverage.html
     sources:
       - "**/*.go"
+      - "testdata/**"
