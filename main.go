@@ -45,8 +45,8 @@ func run(args []string) error {
 	}
 
 	logLevel := slog.LevelInfo
-	if flags.logLevel.String() != "" {
-		logLevel = flags.logLevel.ToLeveler().Level()
+	if flags.LogLevel.String() != "" {
+		logLevel = flags.LogLevel.ToLeveler().Level()
 	}
 	logger, _ = log.New(log.WithLevel(logLevel))
 	logger.Debug("app flags", "flags", flags.String())
@@ -67,8 +67,18 @@ func run(args []string) error {
 		logger.Debug("restored lines from cache file")
 		lines = selectResult.Lines
 	} else {
-		logger.Debug("attempting to parse log file", "log-file", flags.inputFile)
-		inputFile, err := openLogFile(flags.inputFile, logger)
+		var inputFile io.Reader
+
+		switch {
+		case flags.InputFile != "":
+			logger.Debug("attempting to parse log file (-f)", "log-file", flags.InputFile)
+			inputFile, err = openLogFile(flags.InputFile, logger)
+
+		case len(flags.PositionalArgs) == 1:
+			logger.Debug("attempting to parse log file (positional)", "log-file", flags.PositionalArgs[0])
+			inputFile, err = openLogFile(flags.PositionalArgs[0], logger)
+		}
+
 		if err != nil {
 			logger.Error("could not open log file", "error", err)
 			return err
@@ -100,10 +110,10 @@ func dbFile() (string, error) {
 
 func initializeDatabase(logger *log.Logger) (*database.LogsDatabase, error) {
 	var databaseFile string
-	if flags.cacheFile == "" {
+	if flags.CacheFile == "" {
 		databaseFile, _ = dbFile()
 	} else {
-		databaseFile = flags.cacheFile
+		databaseFile = flags.CacheFile
 	}
 
 	d, err := database.New(database.DbParams{
@@ -120,7 +130,7 @@ func initializeDatabase(logger *log.Logger) (*database.LogsDatabase, error) {
 
 func shutdownDatabase(db *database.LogsDatabase, logger *log.Logger) {
 	db.Close()
-	if flags.keepCacheFile == true {
+	if flags.KeepCacheFile == true {
 		return
 	}
 	err := os.Remove(db.DatabaseFile)

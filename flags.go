@@ -1,31 +1,33 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/gookit/goutil/arrutil"
 	"github.com/jsumners-nr/nr-node-logviewer/internal/log"
-	"github.com/spf13/cast"
 	flag "github.com/spf13/pflag"
 	"log/slog"
 	"strings"
 )
 
 type appFlags struct {
-	inputFile     string
-	logLevel      *LevelFlag
-	cacheFile     string
-	keepCacheFile bool
+	InputFile      string     `json:"InputFile"`
+	LogLevel       *LevelFlag `json:"LogLevel"`
+	CacheFile      string
+	KeepCacheFile  bool
+	PositionalArgs []string
 }
 
 func (a *appFlags) String() string {
-	return fmt.Sprintf(
-		"{ inputFile: %s, logLevel: %s, cacheFile: %s, keepCacheFile: %s }",
-		a.inputFile,
-		a.logLevel.String(),
-		a.cacheFile,
-		cast.ToString(a.keepCacheFile),
-	)
+	output := &strings.Builder{}
+	encoder := json.NewEncoder(output)
+	encoder.SetIndent("", "  ")
+	err := encoder.Encode(a)
+	if err != nil {
+		return fmt.Sprintf("failed to marshal flags: %v", err)
+	}
+	return output.String()
 }
 
 var flags = appFlags{}
@@ -44,23 +46,23 @@ func createAndParseFlags(args []string) error {
 	}
 
 	flagSet.StringVarP(
-		&flags.inputFile,
+		&flags.InputFile,
 		"input-file",
 		"f",
 		"",
 		"Path to a newrelic_agent.log file.",
 	)
 
-	flags.logLevel = NewLevelFlag()
+	flags.LogLevel = NewLevelFlag()
 	flagSet.VarP(
-		flags.logLevel,
+		flags.LogLevel,
 		"log-level",
 		"l",
-		"Set the logging level to one of: "+strings.Join(flags.logLevel.allowedValues, ", ")+".",
+		"Set the logging level to one of: "+strings.Join(flags.LogLevel.allowedValues, ", ")+".",
 	)
 
 	flagSet.StringVarP(
-		&flags.cacheFile,
+		&flags.CacheFile,
 		"cache-file",
 		"c",
 		"",
@@ -73,7 +75,7 @@ func createAndParseFlags(args []string) error {
 	)
 
 	flagSet.BoolVarP(
-		&flags.keepCacheFile,
+		&flags.KeepCacheFile,
 		"keep-cache",
 		"k",
 		false,
@@ -84,7 +86,13 @@ func createAndParseFlags(args []string) error {
 
 	// TODO: add a flag that will filter messages based on log type, e.g. "error" logs
 
-	return flagSet.Parse(args[1:])
+	err := flagSet.Parse(args[1:])
+	if err != nil {
+		return err
+	}
+
+	flags.PositionalArgs = flagSet.Args()
+	return nil
 }
 
 func printUsage(help string) {
@@ -105,6 +113,10 @@ func NewLevelFlag() *LevelFlag {
 
 func (l *LevelFlag) String() string {
 	return l.value
+}
+
+func (l *LevelFlag) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + l.String() + `"`), nil
 }
 
 func (l *LevelFlag) Set(value string) error {
