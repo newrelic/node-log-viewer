@@ -1,9 +1,9 @@
-project_name: nrversions
+project_name: nrlv
 
 before:
   hooks:
-    # You may remove this if you don't use go modules.
     - go mod tidy
+
 builds:
   - main: .
     binary: nrlv
@@ -16,13 +16,35 @@ builds:
     goarch:
       - amd64
       - arm64
+
 checksum:
   name_template: 'checksums.txt'
+
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
+
 changelog:
   sort: asc
   filters:
     exclude:
       - '^docs:'
       - '^test:'
+
+brews:
+  - name: node-log-viewer
+    homepage: https://github.com/newrelic/node-log-viewer
+    commit_author:
+      name: "{{ .Env.ACTOR }}"
+      email: "{{ .Env.ACTOR_EMAIL }}"
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    directory: Formula
+    description: "New Relic log viewer for Node.js agent logs"
+    license: "Apache-2.0"
+    skip_upload: auto
+    repository:
+      owner: newrelic
+      name: homebrew-tap
+      token: "{{ .Env.NODE_AGENT_GH_TOKEN }}"
+      pull_request:
+        enabled: true
+        draft: false
