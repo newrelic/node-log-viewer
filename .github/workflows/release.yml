@@ -29,13 +29,13 @@ jobs:
           go-version-file: ./go.mod
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: latest
           args: release --clean
         env:
-          ACTOR: ${GITHUB_ACTOR}
-          ACTOR_EMAIL: gh-actions-${GITHUB_ACTOR}@github.com
+          ACTOR: ${{ github.actor }}
+          ACTOR_EMAIL: gh-actions-${{ github.actor }}@github.com
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AGENT_GH_TOKEN: $${{ secrets.NODE_AGENT_GH_TOKEN }}
+          NODE_AGENT_GH_TOKEN: ${{ secrets.NODE_AGENT_GH_TOKEN }}
