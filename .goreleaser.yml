@@ -1,3 +1,4 @@
+version: 2
 project_name: nrlv
 
 before:
@@ -21,7 +22,7 @@ checksum:
   name_template: 'checksums.txt'
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 
 changelog:
   sort: asc
@@ -43,7 +44,8 @@ brews:
     skip_upload: auto
     repository:
       owner: newrelic
-      name: homebrew-agents
+      name: homebrew-tap
+      branch: "node-log-viewer.{{ .Env.ACTOR }}.{{ .Tag }}"
       token: "{{ .Env.NODE_AGENT_GH_TOKEN }}"
       pull_request:
         enabled: true
