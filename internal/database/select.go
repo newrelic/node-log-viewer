@@ -13,10 +13,26 @@ select rowid, original
 from logs_fts
 `
 
+type SelectedRow struct {
+	common.Envelope
+	RowId    int
+	Original string
+}
+
 type SelectResult struct {
-	Lines      []common.Envelope
+	Rows       []SelectedRow
 	StartRowId int
 	EndRowId   int
+}
+
+// ToLines converts the selection result into a set of parsed [common.Envelope]
+// objects.
+func (s *SelectResult) ToLines() []common.Envelope {
+	lines := make([]common.Envelope, 0, len(s.Rows))
+	for _, line := range s.Rows {
+		lines = append(lines, line)
+	}
+	return lines
 }
 
 func (l *LogsDatabase) GetAllLogs() (*SelectResult, error) {
@@ -51,7 +67,7 @@ func (l *LogsDatabase) Select(limit int, clause string) (*SelectResult, error) {
 
 	startRow := &DbRow{}
 	endRow := &DbRow{}
-	lines := make([]common.Envelope, 0)
+	lines := make([]SelectedRow, 0)
 	for rows.Next() {
 		var row DbRow
 		err = l.scanner.ScanRow(&row, rows)
@@ -70,11 +86,15 @@ func (l *LogsDatabase) Select(limit int, clause string) (*SelectResult, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse original log line: %w", err)
 		}
-		lines = append(lines, envelope)
+		lines = append(lines, SelectedRow{
+			Envelope: envelope,
+			RowId:    row.RowId,
+			Original: row.Original,
+		})
 	}
 
 	return &SelectResult{
-		Lines:      lines,
+		Rows:       lines,
 		StartRowId: startRow.RowId,
 		EndRowId:   endRow.RowId,
 	}, nil
