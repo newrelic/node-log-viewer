@@ -12,11 +12,12 @@ import (
 )
 
 type appFlags struct {
-	InputFile      string     `json:"InputFile"`
-	LogLevel       *LevelFlag `json:"LogLevel"`
-	CacheFile      string
-	KeepCacheFile  bool
-	PositionalArgs []string
+	InputFile          string     `json:"InputFile"`
+	LogLevel           *LevelFlag `json:"LogLevel"`
+	CacheFile          string
+	KeepCacheFile      bool
+	DumpRemotePayloads bool
+	PositionalArgs     []string
 }
 
 func (a *appFlags) String() string {
@@ -80,6 +81,17 @@ func createAndParseFlags(args []string) error {
 		"k",
 		false,
 		"Keep the cache file that parsed logs are stored in.",
+	)
+
+	flagSet.BoolVar(
+		&flags.DumpRemotePayloads,
+		"dump-remote-payloads",
+		false,
+		heredoc.Doc(`
+			Filters the provided log file down to only the logs around sending data
+			to the remote collector. No UI will be shown. The logs will be written
+			to stdout as NDJSON.
+		`),
 	)
 
 	// TODO: add a force-parse flag that will purge any cache and force parsing of the log file

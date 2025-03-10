@@ -5,6 +5,7 @@ import (
 	"github.com/jsumners-nr/nr-node-logviewer/internal/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
 )
 
@@ -44,5 +45,26 @@ func Test_parseLogFile(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 8, len(lines))
 		assert.Equal(t, "Created segment", lines[7].Message())
+	})
+
+	t.Run("dumps remote_method logs to stdout", func(t *testing.T) {
+		testDb, err := database.New(database.DbParams{
+			DatabaseFilePath: "file::memory:",
+			DoMigration:      true,
+			Logger:           nullLogger,
+		})
+		require.Nil(t, err)
+
+		reader, err := fs.Open("testdata/v0/http-server.log")
+		require.Nil(t, err)
+
+		_, err = parseLogFile(reader, testDb, nullLogger)
+		require.Nil(t, err)
+
+		writer := &strings.Builder{}
+		err = dumpRemotePayloads(testDb, writer)
+		require.Nil(t, err)
+		logs := strings.Split(writer.String(), "\n")
+		assert.Equal(t, 384, len(logs))
 	})
 }

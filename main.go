@@ -63,9 +63,9 @@ func run(args []string) error {
 	}
 
 	var lines []common.Envelope
-	if len(selectResult.Lines) > 0 {
+	if len(selectResult.Rows) > 0 {
 		logger.Debug("restored lines from cache file")
-		lines = selectResult.Lines
+		lines = selectResult.ToLines()
 	} else {
 		var inputFile io.Reader
 
@@ -89,6 +89,15 @@ func run(args []string) error {
 			logger.Debug("could not parse log file", "error", err)
 			return err
 		}
+	}
+
+	if flags.DumpRemotePayloads == true {
+		logger.Debug("dumping remote payloads")
+		err = dumpRemotePayloads(db, os.Stdout)
+		if err != nil {
+			logger.Error("error dumping remote payloads", "error", err)
+		}
+		return nil
 	}
 
 	logger.Debug("starting tui")
@@ -207,4 +216,18 @@ func parseLogFile(logFile io.Reader, db *database.LogsDatabase, logger *log.Logg
 	logger.Debug("finished reading log lines from input")
 
 	return lines, nil
+}
+
+func dumpRemotePayloads(db *database.LogsDatabase, writer io.Writer) error {
+	// TODO: if we implement a search by "component", utilize that here instead
+	results, err := db.Search("remote_method")
+	if err != nil {
+		return fmt.Errorf("failed to search logs for remote payloads: %w", err)
+	}
+
+	for _, result := range results.Rows {
+		io.WriteString(writer, result.Original+"\n")
+	}
+
+	return nil
 }
