@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/jsumners-nr/nr-node-logviewer/internal/common"
-	v0 "github.com/jsumners-nr/nr-node-logviewer/internal/v0"
+	"github.com/newrelic/node-log-viewer/internal/common"
+	v0 "github.com/newrelic/node-log-viewer/internal/v0"
 	"gopkg.in/yaml.v3"
 	"strconv"
 )

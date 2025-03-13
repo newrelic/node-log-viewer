@@ -9,9 +9,9 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	migrateSqlite "github.com/golang-migrate/migrate/v4/database/sqlite"
 	migrateFS "github.com/golang-migrate/migrate/v4/source/iofs"
-	"github.com/jsumners-nr/nr-node-logviewer/internal/database/migrations"
-	"github.com/jsumners-nr/nr-node-logviewer/internal/log"
 	"github.com/jsumners/go-rfc3339"
+	"github.com/newrelic/node-log-viewer/internal/database/migrations"
+	"github.com/newrelic/node-log-viewer/internal/log"
 
 	// We have to load the sqlite driver without using it because Go's stdlib
 	// database system relies on import side effects for loading database drivers.

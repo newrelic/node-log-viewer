@@ -2,7 +2,7 @@ package database
 
 import (
 	"database/sql"
-	v0 "github.com/jsumners-nr/nr-node-logviewer/internal/v0"
+	v0 "github.com/newrelic/node-log-viewer/internal/v0"
 )
 
 const insertSql = `

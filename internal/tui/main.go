@@ -1,9 +1,9 @@
 package tui
 
 import (
-	"github.com/jsumners-nr/nr-node-logviewer/internal/common"
-	"github.com/jsumners-nr/nr-node-logviewer/internal/database"
-	"github.com/jsumners-nr/nr-node-logviewer/internal/log"
+	"github.com/newrelic/node-log-viewer/internal/common"
+	"github.com/newrelic/node-log-viewer/internal/database"
+	"github.com/newrelic/node-log-viewer/internal/log"
 	"github.com/rivo/tview"
 )
 
