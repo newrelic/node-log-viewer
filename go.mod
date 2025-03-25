@@ -1,4 +1,4 @@
-module github.com/jsumners-nr/nr-node-logviewer
+module github.com/newrelic/node-log-viewer
 
 go 1.24
 

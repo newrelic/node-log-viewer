@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/gookit/goutil/arrutil"
-	"github.com/jsumners-nr/nr-node-logviewer/internal/log"
+	"github.com/newrelic/node-log-viewer/internal/log"
 	flag "github.com/spf13/pflag"
 	"log/slog"
 	"strings"

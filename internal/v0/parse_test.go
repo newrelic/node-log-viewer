@@ -2,8 +2,8 @@ package v0
 
 import (
 	"encoding/json"
-	"github.com/jsumners-nr/nr-node-logviewer/internal/common"
 	"github.com/jsumners/go-rfc3339"
+	"github.com/newrelic/node-log-viewer/internal/common"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/jsumners-nr/nr-node-logviewer/internal/database"
-	"github.com/jsumners-nr/nr-node-logviewer/internal/log"
+	"github.com/newrelic/node-log-viewer/internal/database"
+	"github.com/newrelic/node-log-viewer/internal/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"strings"

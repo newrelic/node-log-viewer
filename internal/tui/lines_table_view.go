@@ -3,7 +3,7 @@ package tui
 import (
 	"fmt"
 	"github.com/gdamore/tcell/v2"
-	"github.com/jsumners-nr/nr-node-logviewer/internal/common"
+	"github.com/newrelic/node-log-viewer/internal/common"
 	"github.com/rivo/tview"
 	"strings"
 )
