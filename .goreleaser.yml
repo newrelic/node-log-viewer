@@ -1,3 +1,12 @@
+# To test this configuration locally, run:
+#   goreleaser release --clean --skip=publish --skip=validate --skip=homebrew
+#
+# The `--skip=homebrew` is necessary because the `brews` section is templated
+# out with substitutions that rely on the GitHub Actions CI environment. To
+# test the generation of the homebrew tap file, remove the skip flag and either
+# setup the environment to have necessary keys, or temporarily refactor the
+# brews config with hardcoded values.
+
 version: 2
 project_name: nrlv
 
@@ -17,6 +26,10 @@ builds:
     goarch:
       - amd64
       - arm64
+    ldflags: |
+      -s -w 
+      -X github.com/newrelic/node-log-viewer/internal/misc.versionString={{.Version}}
+      -X github.com/newrelic/node-log-viewer/internal/misc.commitHash={{.FullCommit}}
 
 checksum:
   name_template: 'checksums.txt'
