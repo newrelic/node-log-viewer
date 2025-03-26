@@ -18,6 +18,7 @@ type appFlags struct {
 	KeepCacheFile      bool
 	DumpRemotePayloads bool
 	PositionalArgs     []string
+	Version            bool
 }
 
 func (a *appFlags) String() string {
@@ -91,6 +92,17 @@ func createAndParseFlags(args []string) error {
 			Filters the provided log file down to only the logs around sending data
 			to the remote collector. No UI will be shown. The logs will be written
 			to stdout as NDJSON.
+		`),
+	)
+
+	flagSet.BoolVarP(
+		&flags.Version,
+		"version",
+		"v",
+		false,
+		heredoc.Doc(`
+			Prints the version string to stdout and terminates the process. The
+			TUI will not be shown, and any provided log file will not be read.
 		`),
 	)
 

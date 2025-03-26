@@ -8,6 +8,7 @@ import (
 	"github.com/newrelic/node-log-viewer/internal/common"
 	"github.com/newrelic/node-log-viewer/internal/database"
 	log "github.com/newrelic/node-log-viewer/internal/log"
+	"github.com/newrelic/node-log-viewer/internal/misc"
 	"github.com/newrelic/node-log-viewer/internal/tui"
 	v0 "github.com/newrelic/node-log-viewer/internal/v0"
 	"github.com/spf13/afero"
@@ -42,6 +43,11 @@ func run(args []string) error {
 			return nil
 		}
 		return err
+	}
+
+	if flags.Version == true {
+		misc.Version()
+		return nil
 	}
 
 	logLevel := slog.LevelInfo
