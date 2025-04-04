@@ -12,6 +12,13 @@ type TUI struct {
 	db     *database.LogsDatabase
 	logger *log.Logger
 
+	// captureGlobalInput will be true when we are on a "main" view, e.g. the
+	// "lines table" view. It will be false when there is some view showing that
+	// needs to capture all key presses, e.g. a search modal. The idea being, if
+	// this is false, then we can ignore any global keys, e.g. the quit key, until
+	// that view is closed.
+	captureGlobalInput bool
+
 	// root is the overall application frame.
 	root *tview.Grid
 	// pages is the primary top view of the application, i.e. everything
@@ -43,11 +50,12 @@ type TUI struct {
 
 func NewTUI(logLines []common.Envelope, db *database.LogsDatabase, logger *log.Logger) TUI {
 	tui := TUI{
-		App:    tview.NewApplication(),
-		db:     db,
-		logger: logger,
-		lines:  logLines,
-		pages:  tview.NewPages(),
+		App:                tview.NewApplication(),
+		db:                 db,
+		logger:             logger,
+		lines:              logLines,
+		pages:              tview.NewPages(),
+		captureGlobalInput: true,
 	}
 
 	tui.initLineDetailView()
@@ -64,6 +72,11 @@ func NewTUI(logLines []common.Envelope, db *database.LogsDatabase, logger *log.L
 	return tui
 }
 
+func (t *TUI) hidePage(name string) {
+	t.pages.HidePage(name)
+	t.captureGlobalInput = !t.captureGlobalInput
+}
+
 // showPage hides the current page, caches the text of the left status
 // indicator, updates the left status, and shows the new page.
 func (t *TUI) showPage(name string, status string) {
@@ -74,7 +87,18 @@ func (t *TUI) showPage(name string, status string) {
 		t.prevPageStatus = ""
 	}
 
+	t.captureGlobalInput = t.pageShouldCaptureGlobalInput(name)
 	t.pages.HidePage(currentPageName)
 	t.pages.ShowPage(name)
 	t.leftStatus.SetText(status)
+}
+
+func (t *TUI) hideModal(name string) {
+	t.pages.HidePage(name)
+	t.captureGlobalInput = !t.captureGlobalInput
+}
+
+func (t *TUI) showModal(name string) {
+	t.captureGlobalInput = t.pageShouldCaptureGlobalInput(name)
+	t.pages.ShowPage(name).SendToFront(name)
 }
