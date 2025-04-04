@@ -19,12 +19,19 @@ func (t *TUI) initRootView() {
 //
 // The majority of event handlers should be located on primitives.
 func (t *TUI) rootInputHandler(event *tcell.EventKey) *tcell.EventKey {
-	switch event.Key() {
-	case tcell.KeyCtrlH:
+	if t.captureGlobalInput == false {
+		// When captureGlobalInput is false, the app should be showing a view that
+		// requires full input control, i.e. one that should not recognize global
+		// keyboard shortcuts.
+		return event
+	}
+	
+	switch event.Rune() {
+	case 'h':
 		t.leftStatus.SetText("help invoked")
 		return nil
 
-	case tcell.KeyCtrlQ:
+	case 'q':
 		t.App.Stop()
 		return nil
 	}

@@ -55,9 +55,9 @@ in an easy to review format.
     * `up arrow`, `j`: move line selection down
     * `down arrow`, `k`: move line selection up
     * `enter`: view detail of selected line
-    * `ctrl+s`: open search box
-    * `ctrl+g`: open go to line box
-    * `ctrl+q`, `ctrl+s`: quit the application
+    * `s`: open search box
+    * `g`: open go to line box
+    * `q`, `ctrl+c`: quit the application
 + Line detail view:
     * up/down navigation is same as lines view
     * `esc`: return to lines view
