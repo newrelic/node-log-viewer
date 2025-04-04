@@ -7,7 +7,7 @@ const (
 	PAGE_SEARCH_FORM        = "search_form"
 )
 
-func (t *TUI) pageShouldCaptureGlobal(pageName string) bool {
+func (t *TUI) pageShouldCaptureGlobalInput(pageName string) bool {
 	switch pageName {
 	case PAGE_GOTO_LINE:
 		return false

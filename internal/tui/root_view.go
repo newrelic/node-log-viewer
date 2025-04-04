@@ -25,7 +25,7 @@ func (t *TUI) rootInputHandler(event *tcell.EventKey) *tcell.EventKey {
 		// keyboard shortcuts.
 		return event
 	}
-	
+
 	switch event.Rune() {
 	case 'h':
 		t.leftStatus.SetText("help invoked")

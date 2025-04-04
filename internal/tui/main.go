@@ -87,7 +87,7 @@ func (t *TUI) showPage(name string, status string) {
 		t.prevPageStatus = ""
 	}
 
-	t.captureGlobalInput = t.pageShouldCaptureGlobal(name)
+	t.captureGlobalInput = t.pageShouldCaptureGlobalInput(name)
 	t.pages.HidePage(currentPageName)
 	t.pages.ShowPage(name)
 	t.leftStatus.SetText(status)
@@ -99,6 +99,6 @@ func (t *TUI) hideModal(name string) {
 }
 
 func (t *TUI) showModal(name string) {
-	t.captureGlobalInput = t.pageShouldCaptureGlobal(name)
+	t.captureGlobalInput = t.pageShouldCaptureGlobalInput(name)
 	t.pages.ShowPage(name).SendToFront(name)
 }
