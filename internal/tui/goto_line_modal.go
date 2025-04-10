@@ -28,11 +28,11 @@ func (t *TUI) initGotoLineModal() {
 			0,
 		)
 		t.linesTable.Select(int(lineNum)-1, 0)
-		t.pages.HidePage(PAGE_GOTO_LINE)
+		t.hideModal(PAGE_GOTO_LINE)
 	})
 
 	form.AddButton("Cancel", func() {
-		t.pages.HidePage(PAGE_GOTO_LINE)
+		t.hideModal(PAGE_GOTO_LINE)
 	})
 
 	t.pages.AddPage(PAGE_GOTO_LINE, modal(form, 30, 7), true, false)

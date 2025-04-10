@@ -18,7 +18,7 @@ func (t *TUI) initSearchModal() {
 	)
 
 	form.AddButton("Search", func() { t.handleSearch(form) })
-	form.AddButton("Cancel", func() { t.pages.HidePage(PAGE_SEARCH_FORM) })
+	form.AddButton("Cancel", func() { t.hideModal(PAGE_SEARCH_FORM) })
 
 	t.pages.AddPage(PAGE_SEARCH_FORM, modal(form, 50, 8), true, false)
 }
@@ -28,7 +28,7 @@ func (t *TUI) handleSearch(form *tview.Form) {
 	searchResult, err := t.db.Search(searchTerm)
 	if err != nil {
 		t.logger.Error("search failed", "error", err)
-		t.pages.HidePage(PAGE_SEARCH_FORM)
+		t.hideModal(PAGE_SEARCH_FORM)
 		// TODO: show error modal
 		return
 	}
@@ -37,7 +37,7 @@ func (t *TUI) handleSearch(form *tview.Form) {
 	content := NewLinesTableContent(lines)
 	t.lines = lines
 	t.linesTable.SetContent(content)
-	t.pages.HidePage(PAGE_SEARCH_FORM)
+	t.hideModal(PAGE_SEARCH_FORM)
 	t.linesScrollStatus(0, 0)
 	t.linesTable.Select(0, 0)
 }
