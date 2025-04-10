@@ -30,7 +30,7 @@ type SelectResult struct {
 func (s *SelectResult) ToLines() []common.Envelope {
 	lines := make([]common.Envelope, 0, len(s.Rows))
 	for _, line := range s.Rows {
-		lines = append(lines, line)
+		lines = append(lines, line.Envelope)
 	}
 	return lines
 }
