@@ -33,7 +33,7 @@ type DbParams struct {
 }
 
 type DbRow struct {
-	RowId     int
+	RowId     int `db:"rowid"`
 	Version   int
 	Time      rfc3339.DateTime
 	Component string

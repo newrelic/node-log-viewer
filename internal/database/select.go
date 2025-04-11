@@ -9,7 +9,7 @@ import (
 )
 
 const selectSql = `
-select rowid, original
+select rowid, *
 from logs_fts
 `
 
@@ -40,10 +40,14 @@ func (l *LogsDatabase) GetAllLogs() (*SelectResult, error) {
 }
 
 func (l *LogsDatabase) Search(term string) (*SelectResult, error) {
+	if term == "" {
+		return l.GetAllLogs()
+	}
 	return l.Select(0, fmt.Sprintf("where logs_fts match '%s'", term))
 }
 
 func (l *LogsDatabase) Select(limit int, clause string) (*SelectResult, error) {
+	l.logger.Trace("performing database select", "limit", limit, "clause", clause)
 	namedParams := make([]any, 0)
 	statement := selectSql
 
@@ -65,8 +69,8 @@ func (l *LogsDatabase) Select(limit int, clause string) (*SelectResult, error) {
 	}
 	defer rows.Close()
 
-	startRow := &DbRow{}
-	endRow := &DbRow{}
+	var startRow *DbRow
+	var endRow *DbRow
 	lines := make([]SelectedRow, 0)
 	for rows.Next() {
 		var row DbRow
@@ -75,6 +79,9 @@ func (l *LogsDatabase) Select(limit int, clause string) (*SelectResult, error) {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 
+		// On the first pass, we set the first row as the starting row.
+		// On all subsequent passes, we assign/re-assign the current row as the
+		// ending row.
 		if startRow == nil {
 			startRow = &row
 		} else {
@@ -91,6 +98,12 @@ func (l *LogsDatabase) Select(limit int, clause string) (*SelectResult, error) {
 			RowId:    row.RowId,
 			Original: row.Original,
 		})
+	}
+
+	// If we only had a single row result, then we never had a second pass that
+	// would have set an ending row.
+	if endRow == nil {
+		endRow = startRow
 	}
 
 	return &SelectResult{
