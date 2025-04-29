@@ -207,8 +207,8 @@ func parseLogFile(logFile io.Reader, db *database.LogsDatabase, logger *log.Logg
 
 		err = json.Unmarshal([]byte(sourceString), &envelope)
 		if err != nil {
-			logger.Error("failed to parse line", "error", err, "line", sourceString)
-			return nil, fmt.Errorf("%w: `%s`", err, sourceString)
+			logger.Warn("failed to parse line", "error", err, "line", sourceString)
+			continue
 		}
 
 		err = db.Insert(envelope, sourceString)
