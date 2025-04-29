@@ -47,6 +47,22 @@ func Test_parseLogFile(t *testing.T) {
 		assert.Equal(t, "Created segment", lines[7].Message())
 	})
 
+	t.Run("handles malformed json", func(t *testing.T) {
+		testDb, err := database.New(database.DbParams{
+			DatabaseFilePath: "file::memory:",
+			DoMigration:      true,
+			Logger:           nullLogger,
+		})
+		require.Nil(t, err)
+
+		reader, err := fs.Open("testdata/v0/broken-line.log")
+		require.Nil(t, err)
+
+		lines, err := parseLogFile(reader, testDb, nullLogger)
+		assert.Nil(t, err)
+		assert.Equal(t, 2, len(lines))
+	})
+
 	t.Run("dumps remote_method logs to stdout", func(t *testing.T) {
 		testDb, err := database.New(database.DbParams{
 			DatabaseFilePath: "file::memory:",
