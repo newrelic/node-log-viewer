@@ -73,7 +73,7 @@ func run(args []string) error {
 		logger.Debug("restored lines from cache file")
 		lines = selectResult.ToLines()
 	} else {
-		var inputFile io.Reader
+		var inputFile io.ReadCloser
 
 		switch {
 		case flags.InputFile != "":
@@ -90,6 +90,7 @@ func run(args []string) error {
 			return err
 		}
 
+		defer inputFile.Close()
 		lines, err = parseLogFile(inputFile, db, logger)
 		if err != nil {
 			logger.Debug("could not parse log file", "error", err)
@@ -155,7 +156,7 @@ func shutdownDatabase(db *database.LogsDatabase, logger *log.Logger) {
 	}
 }
 
-func openLogFile(filePath string, logger *log.Logger) (io.Reader, error) {
+func openLogFile(filePath string, logger *log.Logger) (io.ReadCloser, error) {
 	if filePath == "" {
 		return nil, fmt.Errorf("no input log file provided")
 	}
@@ -170,6 +171,8 @@ func parseLogFile(logFile io.Reader, db *database.LogsDatabase, logger *log.Logg
 	lines := make([]common.Envelope, 0)
 	scanner := bufio.NewScanner(logFile)
 
+	bufferLimit := 1_000
+	parsedLinesBuffer := make([]database.InsertTuple, 0)
 	for scanner.Scan() {
 		err := scanner.Err()
 		if err != nil {
@@ -211,14 +214,29 @@ func parseLogFile(logFile io.Reader, db *database.LogsDatabase, logger *log.Logg
 			continue
 		}
 
-		err = db.Insert(envelope, sourceString)
-		if err != nil {
-			logger.Error("failed to insert line into database", "error", err, "line", sourceString)
-			return nil, fmt.Errorf("%w: `%s`", err, sourceString)
+		if len(parsedLinesBuffer) < bufferLimit {
+			parsedLinesBuffer = append(parsedLinesBuffer, database.InsertTuple{
+				ParsedLog: envelope,
+				Source:    sourceString,
+			})
+		} else {
+			err = db.BatchInsert(parsedLinesBuffer)
+			if err != nil {
+				return nil, err
+			}
+			parsedLinesBuffer = make([]database.InsertTuple, 0)
 		}
 
 		lines = append(lines, envelope)
 	}
+
+	if len(parsedLinesBuffer) > 0 {
+		err := db.BatchInsert(parsedLinesBuffer)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	logger.Debug("finished reading log lines from input")
 
 	return lines, nil
