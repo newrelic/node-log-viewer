@@ -42,11 +42,11 @@ func (l *LogsDatabase) BatchInsert(tuples []InsertTuple) error {
 		builder.WriteString("\n(?, ?, ?, ?, ?),")
 		values = append(
 			values,
-			sql.Named("version", log.Version),
-			sql.Named("time", log.Time),
-			sql.Named("component", log.SourceComponent),
-			sql.Named("message", log.LogMessage),
-			sql.Named("original", tuple.Source),
+			log.Version,
+			log.Time,
+			log.SourceComponent,
+			log.LogMessage,
+			tuple.Source,
 		)
 	}
 
