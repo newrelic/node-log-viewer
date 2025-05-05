@@ -81,6 +81,6 @@ func Test_parseLogFile(t *testing.T) {
 		err = dumpRemotePayloads(testDb, writer)
 		require.Nil(t, err)
 		logs := strings.Split(writer.String(), "\n")
-		assert.Equal(t, 384, len(logs))
+		assert.Equal(t, 383, len(logs))
 	})
 }

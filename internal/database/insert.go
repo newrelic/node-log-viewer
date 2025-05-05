@@ -10,7 +10,14 @@ const insertSql = `
 	values (@version, @time, @component, @message, @original)
 `
 
-func (l *LogsDatabase) Insert(log *v0.LineEnvelope, source string) error {
+type InsertTuple struct {
+	ParsedLog *v0.LineEnvelope
+	Source    string
+}
+
+func (l *LogsDatabase) Insert(tuple InsertTuple) error {
+	log := tuple.ParsedLog
+	source := tuple.Source
 	_, err := l.Connection.Exec(
 		insertSql,
 		sql.Named("version", log.Version),
@@ -20,4 +27,16 @@ func (l *LogsDatabase) Insert(log *v0.LineEnvelope, source string) error {
 		sql.Named("original", source),
 	)
 	return err
+}
+
+func (l *LogsDatabase) BatchInsert(tuples []InsertTuple) error {
+	l.logger.Debug("inserting batch of logs", "batch_size", len(tuples))
+	for _, tuple := range tuples {
+		err := l.Insert(tuple)
+		if err != nil {
+			l.logger.Error("failed to insert line into database", "error", err, "line", tuple.Source)
+			return err
+		}
+	}
+	return nil
 }
