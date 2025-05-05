@@ -12,6 +12,28 @@ import (
 var nullLogger = log.NewDiscardLogger()
 
 func Test_parseLogFile(t *testing.T) {
+	t.Run("inserts lines into the database", func(t *testing.T) {
+		testDb, err := database.New(database.DbParams{
+			DatabaseFilePath: "file::memory:",
+			DoMigration:      true,
+			Logger:           nullLogger,
+		})
+		require.Nil(t, err)
+
+		reader, err := fs.Open("testdata/v0/good-line.log")
+		require.Nil(t, err)
+
+		_, err = parseLogFile(reader, testDb, nullLogger)
+		assert.Nil(t, err)
+
+		result, err := testDb.Select(0, "")
+		assert.Nil(t, err)
+		assert.Equal(t, 1, len(result.Rows))
+
+		log := result.Rows[0]
+		assert.Equal(t, "api", log.Component())
+	})
+
 	t.Run("handles node warnings embedded in file", func(t *testing.T) {
 		testDb, err := database.New(database.DbParams{
 			DatabaseFilePath: "file::memory:",

@@ -100,6 +100,14 @@ func (l *LogsDatabase) Select(limit int, clause string) (*SelectResult, error) {
 		})
 	}
 
+	if startRow == nil {
+		return &SelectResult{
+			Rows:       make([]SelectedRow, 0),
+			StartRowId: 0,
+			EndRowId:   0,
+		}, nil
+	}
+
 	// If we only had a single row result, then we never had a second pass that
 	// would have set an ending row.
 	if endRow == nil {

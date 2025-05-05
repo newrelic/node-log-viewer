@@ -40,6 +40,19 @@ func Test_Select(t *testing.T) {
 		testDb.Close()
 	})
 
+	t.Run("works with empty db", func(t *testing.T) {
+		db, err := New(DbParams{
+			DatabaseFilePath: "file::memory:",
+			DoMigration:      true,
+			Logger:           nullLogger,
+		})
+		require.Nil(t, err)
+
+		results, err := db.Select(0, "")
+		assert.Nil(t, err)
+		assert.Equal(t, 0, len(results.Rows))
+	})
+
 	t.Run("finds limited set of rows for a search term", func(t *testing.T) {
 		results, err := testDb.Select(1, "where logs_fts match 'shim'")
 		assert.Nil(t, err)
