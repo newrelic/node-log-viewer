@@ -215,7 +215,10 @@ func parseLogFile(logFile io.Reader, db *database.LogsDatabase, logger *log.Logg
 		}
 
 		if len(parsedLinesBuffer) < bufferLimit {
-			parsedLinesBuffer = append(parsedLinesBuffer, database.InsertTuple{envelope, sourceString})
+			parsedLinesBuffer = append(parsedLinesBuffer, database.InsertTuple{
+				ParsedLog: envelope,
+				Source:    sourceString,
+			})
 		} else {
 			err = db.BatchInsert(parsedLinesBuffer)
 			if err != nil {
