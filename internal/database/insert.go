@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	v0 "github.com/newrelic/node-log-viewer/internal/v0"
+	"strings"
 )
 
 const insertSql = `
@@ -31,12 +32,30 @@ func (l *LogsDatabase) Insert(tuple InsertTuple) error {
 
 func (l *LogsDatabase) BatchInsert(tuples []InsertTuple) error {
 	l.logger.Debug("inserting batch of logs", "batch_size", len(tuples))
+
+	builder := strings.Builder{}
+	builder.WriteString("insert into logs (version, time, component, message, original) values")
+
+	values := make([]any, 0)
 	for _, tuple := range tuples {
-		err := l.Insert(tuple)
-		if err != nil {
-			l.logger.Error("failed to insert line into database", "error", err, "line", tuple.Source)
-			return err
-		}
+		log := tuple.ParsedLog
+		builder.WriteString("\n(?, ?, ?, ?, ?),")
+		values = append(
+			values,
+			sql.Named("version", log.Version),
+			sql.Named("time", log.Time),
+			sql.Named("component", log.SourceComponent),
+			sql.Named("message", log.LogMessage),
+			sql.Named("original", tuple.Source),
+		)
 	}
+
+	statement, _ := strings.CutSuffix(builder.String(), ",")
+	_, err := l.Connection.Exec(statement, values...)
+	if err != nil {
+		l.logger.Error("failed to insert lines into database", "error", err)
+		return err
+	}
+
 	return nil
 }
