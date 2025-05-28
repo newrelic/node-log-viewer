@@ -34,6 +34,44 @@ func Test_parseLogFile(t *testing.T) {
 		assert.Equal(t, "api", log.Component())
 	})
 
+	t.Run("inserts _all_ lines into the database", func(t *testing.T) {
+		testDb, err := database.New(database.DbParams{
+			DatabaseFilePath: "file::memory:",
+			DoMigration:      true,
+			Logger:           nullLogger,
+		})
+		require.Nil(t, err)
+
+		reader, err := fs.Open("testdata/v0/http-server.log")
+		require.Nil(t, err)
+
+		_, err = parseLogFile(reader, testDb, nullLogger)
+		assert.Nil(t, err)
+
+		result, err := testDb.Select(0, "")
+		assert.Nil(t, err)
+		assert.Equal(t, 8_092, len(result.Rows))
+	})
+
+	t.Run("handles exceedingly long lines", func(t *testing.T) {
+		testDb, err := database.New(database.DbParams{
+			DatabaseFilePath: "file::memory:",
+			DoMigration:      true,
+			Logger:           nullLogger,
+		})
+		require.Nil(t, err)
+
+		reader, err := fs.Open("testdata/v0/exceedingly-long-line.log")
+		require.Nil(t, err)
+
+		_, err = parseLogFile(reader, testDb, nullLogger)
+		assert.Nil(t, err)
+
+		result, err := testDb.Select(0, "")
+		assert.Nil(t, err)
+		assert.Equal(t, 3, len(result.Rows))
+	})
+
 	t.Run("handles node warnings embedded in file", func(t *testing.T) {
 		testDb, err := database.New(database.DbParams{
 			DatabaseFilePath: "file::memory:",
@@ -103,6 +141,6 @@ func Test_parseLogFile(t *testing.T) {
 		err = dumpRemotePayloads(testDb, writer)
 		require.Nil(t, err)
 		logs := strings.Split(writer.String(), "\n")
-		assert.Equal(t, 383, len(logs))
+		assert.Equal(t, 384, len(logs))
 	})
 }

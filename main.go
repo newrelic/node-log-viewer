@@ -169,10 +169,21 @@ var matchLeadingK8sTimestamp = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}\s\d{2}:\d{
 
 func parseLogFile(logFile io.Reader, db *database.LogsDatabase, logger *log.Logger) ([]common.Envelope, error) {
 	lines := make([]common.Envelope, 0)
+	scanBuffer := make([]byte, 0, 64*1_024)
 	scanner := bufio.NewScanner(logFile)
+	scanner.Buffer(scanBuffer, 1_024*1_024) // Scan up to 1MB.
 
 	bufferLimit := 1_000
 	parsedLinesBuffer := make([]database.InsertTuple, 0)
+
+	// TODO: the scanner only scans up to a maximum number of bytes before it
+	// gives up looking for the token (`\n` in our case) and generates a
+	// `bufio.ErrTooLong` error. We should instead use `bufio.Reader.ReadString`
+	// to parse line by line. But that will require a bit of refactoring of this
+	// loop. For now, 2025-05-28, it's simpler to increase the maximum byte limit.
+	// See:
+	// + https://stackoverflow.com/a/37455465
+	// + https://stackoverflow.com/a/6143530
 	for scanner.Scan() {
 		err := scanner.Err()
 		if err != nil {
@@ -224,7 +235,10 @@ func parseLogFile(logFile io.Reader, db *database.LogsDatabase, logger *log.Logg
 			if err != nil {
 				return nil, err
 			}
-			parsedLinesBuffer = make([]database.InsertTuple, 0)
+			parsedLinesBuffer = []database.InsertTuple{{
+				ParsedLog: envelope,
+				Source:    sourceString,
+			}}
 		}
 
 		lines = append(lines, envelope)

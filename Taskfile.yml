@@ -22,6 +22,7 @@ tasks:
     sources:
       - "**/*.go"
       - "testdata/**"
+      - "testdata/v0/**"
 
   test-cov:
     cmds:
@@ -29,6 +30,7 @@ tasks:
     sources:
       - "**/*.go"
       - "testdata/**"
+      - "testdata/v0/**"
 
   test-cov-html:
     cmds:
@@ -37,3 +39,4 @@ tasks:
     sources:
       - "**/*.go"
       - "testdata/**"
+      - "testdata/v0/**"
