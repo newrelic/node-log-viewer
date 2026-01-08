@@ -12,6 +12,15 @@ type TUI struct {
 	db     *database.LogsDatabase
 	logger *log.Logger
 
+	// query represents the data in the current view. For example, the initial
+	// view is the list of all logs. So the initial query is effectively a
+	// `select *` query.
+	query *database.Query
+
+	// prevQueries is used to keep track of queries as the views are changed.
+	// TODO: might not be necessary? ~ 2026-01-08
+	prevQueries *common.Stack[*database.Query]
+
 	// captureGlobalInput will be true when we are on a "main" view, e.g. the
 	// "lines table" view. It will be false when there is some view showing that
 	// needs to capture all key presses, e.g. a search modal. The idea being, if
@@ -48,15 +57,19 @@ type TUI struct {
 	prevPageStatus string
 }
 
-func NewTUI(logLines []common.Envelope, db *database.LogsDatabase, logger *log.Logger) TUI {
+func NewTUI(db *database.LogsDatabase, logger *log.Logger) TUI {
 	tui := TUI{
 		App:                tview.NewApplication(),
 		db:                 db,
 		logger:             logger,
-		lines:              logLines,
 		pages:              tview.NewPages(),
 		captureGlobalInput: true,
 	}
+
+	stack := common.NewStack[*database.Query]()
+	tui.prevQueries = &stack
+	query := database.SelectAllQuery(db, logger)
+	tui.query = query
 
 	tui.initLineDetailView()
 	tui.initLinesTableView()

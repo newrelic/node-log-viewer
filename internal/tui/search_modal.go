@@ -1,6 +1,9 @@
 package tui
 
-import "github.com/rivo/tview"
+import (
+	"github.com/newrelic/node-log-viewer/internal/database"
+	"github.com/rivo/tview"
+)
 
 func (t *TUI) initSearchModal() {
 	form := tview.NewForm()
@@ -25,17 +28,16 @@ func (t *TUI) initSearchModal() {
 
 func (t *TUI) handleSearch(form *tview.Form) {
 	searchTerm := form.GetFormItem(0).(*tview.InputField).GetText()
-	searchResult, err := t.db.Search(searchTerm)
-	if err != nil {
-		t.logger.Error("search failed", "error", err)
-		t.hideModal(PAGE_SEARCH_FORM)
-		// TODO: show error modal
-		return
-	}
 
-	lines := searchResult.ToLines()
-	content := NewLinesTableContent(lines)
-	t.lines = lines
+	var query *database.Query
+	if searchTerm == "" {
+		query = database.SelectAllQuery(t.db, t.logger)
+	} else {
+		query = database.SearchQuery(searchTerm, t.db, t.logger)
+	}
+	content := NewLinesTableContent(query)
+
+	t.query = query
 	t.linesTable.SetContent(content)
 	t.hideModal(PAGE_SEARCH_FORM)
 	t.linesScrollStatus(0, 0)

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/georgysavva/scany/v2/dbscan"
 	"github.com/georgysavva/scany/v2/sqlscan"
 	"github.com/golang-migrate/migrate/v4"
@@ -89,6 +90,20 @@ func (l *LogsDatabase) Close() {
 
 func (l *LogsDatabase) MigrateUp() error {
 	return migrateUp(l.Connection)
+}
+
+func (l *LogsDatabase) HasCachedLogs() (bool, error) {
+	var numRows int
+	row := l.Connection.QueryRow(`select count(*) as num_logs from logs_fts`)
+	err := row.Scan(&numRows)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return false, nil
+	case err != nil:
+		return false, fmt.Errorf("error querying for cached rows: %w", err)
+	default:
+		return numRows > 0, nil
+	}
 }
 
 func migrateUp(db *sql.DB) error {

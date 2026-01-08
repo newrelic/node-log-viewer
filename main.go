@@ -5,7 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/newrelic/node-log-viewer/internal/common"
+	"io"
+	"log/slog"
+	"os"
+	"path"
+	"regexp"
+	"runtime/pprof"
+	"strings"
+
 	"github.com/newrelic/node-log-viewer/internal/database"
 	log "github.com/newrelic/node-log-viewer/internal/log"
 	"github.com/newrelic/node-log-viewer/internal/misc"
@@ -13,12 +20,6 @@ import (
 	v0 "github.com/newrelic/node-log-viewer/internal/v0"
 	"github.com/spf13/afero"
 	flag "github.com/spf13/pflag"
-	"io"
-	"log/slog"
-	"os"
-	"path"
-	"regexp"
-	"strings"
 )
 
 var exitStatus int
@@ -50,31 +51,36 @@ func run(args []string) error {
 		return nil
 	}
 
+	if flags.CpuProfile != "" {
+		cpuProfileOut, err := fs.Create(flags.CpuProfile)
+		if err != nil {
+			return fmt.Errorf("could not create cpu profile out file `%s`: %w", flags.CpuProfile, err)
+		}
+		pprof.StartCPUProfile(cpuProfileOut)
+		defer pprof.StopCPUProfile()
+	}
+
 	logLevel := slog.LevelInfo
 	if flags.LogLevel.String() != "" {
 		logLevel = flags.LogLevel.ToLeveler().Level()
 	}
 	logger, _ = log.New(log.WithLevel(logLevel))
-	logger.Debug("app flags", "flags", flags.String())
+	logger.Debug("app info", "flags", flags.String(), "pid", os.Getpid())
 
 	db, err = initializeDatabase(logger)
 	logger.Info("cache file created", "cache-file", db.DatabaseFile)
 	defer shutdownDatabase(db, logger)
 
 	// TODO: load input file in a gofunc so we can render a progress bar
-	selectResult, err := db.GetAllLogs()
+	hasCachedLogs, err := db.HasCachedLogs()
 	if err != nil {
 		logger.Error("could not verify cache", "error", err)
 		return err
 	}
 
-	var lines []common.Envelope
-	if len(selectResult.Rows) > 0 {
-		logger.Debug("restored lines from cache file")
-		lines = selectResult.ToLines()
-	} else {
+	if hasCachedLogs == false {
+		logger.Trace("no cached logs found")
 		var inputFile io.ReadCloser
-
 		switch {
 		case flags.InputFile != "":
 			logger.Debug("attempting to parse log file (-f)", "log-file", flags.InputFile)
@@ -91,7 +97,7 @@ func run(args []string) error {
 		}
 
 		defer inputFile.Close()
-		lines, err = parseLogFile(inputFile, db, logger)
+		err = parseLogFile(inputFile, db, logger)
 		if err != nil {
 			logger.Debug("could not parse log file", "error", err)
 			return err
@@ -100,7 +106,7 @@ func run(args []string) error {
 
 	if flags.DumpRemotePayloads == true {
 		logger.Debug("dumping remote payloads")
-		err = dumpRemotePayloads(db, os.Stdout)
+		err = dumpRemotePayloads(db, logger, os.Stdout)
 		if err != nil {
 			logger.Error("error dumping remote payloads", "error", err)
 		}
@@ -108,7 +114,7 @@ func run(args []string) error {
 	}
 
 	logger.Debug("starting tui")
-	ui := tui.NewTUI(lines, db, logger)
+	ui := tui.NewTUI(db, logger)
 	err = ui.App.Run()
 	if err != nil {
 		logger.Error("tui application error", "error", err)
@@ -118,12 +124,15 @@ func run(args []string) error {
 	return nil
 }
 
-// dbFile creates a temporary file and returns the path to it.
+// dbFile creates a cache file and returns the path to it.
 func dbFile() (string, error) {
 	tmpDir := os.TempDir()
 	return path.Join(tmpDir, "newrelic_agent.sqlite"), nil
 }
 
+// initializeDatabase either loads an existing cache file, or creates a new
+// cache file, and returns an initialized sqlite connection targeting that
+// cache file.
 func initializeDatabase(logger *log.Logger) (*database.LogsDatabase, error) {
 	var databaseFile string
 	if flags.CacheFile == "" {
@@ -167,8 +176,14 @@ func openLogFile(filePath string, logger *log.Logger) (io.ReadCloser, error) {
 
 var matchLeadingK8sTimestamp = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3,}\s+?`)
 
-func parseLogFile(logFile io.Reader, db *database.LogsDatabase, logger *log.Logger) ([]common.Envelope, error) {
-	lines := make([]common.Envelope, 0)
+// parseLogFile reads through a theoretical agent NDJSON log file, validates
+// each line, and stores each validated line in the cache database.
+func parseLogFile(logFile io.Reader, db *database.LogsDatabase, logger *log.Logger) error {
+	logger.Trace("starting to parse provided log file")
+	defer func() {
+		logger.Trace("finished parsing provided log file")
+	}()
+
 	scanBuffer := make([]byte, 0, 64*1_024)
 	scanner := bufio.NewScanner(logFile)
 	scanner.Buffer(scanBuffer, 1_024*1_024) // Scan up to 1MB.
@@ -188,7 +203,7 @@ func parseLogFile(logFile io.Reader, db *database.LogsDatabase, logger *log.Logg
 		err := scanner.Err()
 		if err != nil {
 			logger.Error("failed to scan input", "error", err)
-			return nil, err
+			return err
 		}
 
 		// TODO: when we have a v1 line type, we need to do some text inspection
@@ -233,38 +248,36 @@ func parseLogFile(logFile io.Reader, db *database.LogsDatabase, logger *log.Logg
 		} else {
 			err = db.BatchInsert(parsedLinesBuffer)
 			if err != nil {
-				return nil, err
+				return err
 			}
 			parsedLinesBuffer = []database.InsertTuple{{
 				ParsedLog: envelope,
 				Source:    sourceString,
 			}}
 		}
-
-		lines = append(lines, envelope)
 	}
 
 	if len(parsedLinesBuffer) > 0 {
 		err := db.BatchInsert(parsedLinesBuffer)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	logger.Debug("finished reading log lines from input")
-
-	return lines, nil
+	return nil
 }
 
-func dumpRemotePayloads(db *database.LogsDatabase, writer io.Writer) error {
+func dumpRemotePayloads(db *database.LogsDatabase, logger *log.Logger, writer io.Writer) error {
 	// TODO: if we implement a search by "component", utilize that here instead
-	results, err := db.Search("remote_method")
+	query := database.SearchQuery("remote_method", db, logger)
+	rows, err := query.AllResults()
 	if err != nil {
 		return fmt.Errorf("failed to search logs for remote payloads: %w", err)
 	}
 
-	for _, result := range results.Rows {
-		io.WriteString(writer, result.Original+"\n")
+	for _, row := range rows {
+		io.WriteString(writer, row.Original+"\n")
 	}
 
 	return nil

@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
+	"strings"
+
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/gookit/goutil/arrutil"
 	"github.com/newrelic/node-log-viewer/internal/log"
 	flag "github.com/spf13/pflag"
-	"log/slog"
-	"strings"
 )
 
 type appFlags struct {
@@ -19,6 +20,7 @@ type appFlags struct {
 	DumpRemotePayloads bool
 	PositionalArgs     []string
 	Version            bool
+	CpuProfile         string
 }
 
 func (a *appFlags) String() string {
@@ -105,6 +107,14 @@ func createAndParseFlags(args []string) error {
 			TUI will not be shown, and any provided log file will not be read.
 		`),
 	)
+
+	flagSet.StringVar(
+		&flags.CpuProfile,
+		"cpuprofile",
+		"",
+		"Path to a file for storing CPU profiling data.",
+	)
+	flagSet.MarkHidden("cpuprofile")
 
 	// TODO: add a force-parse flag that will purge any cache and force parsing of the log file
 
