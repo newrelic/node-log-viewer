@@ -3,56 +3,71 @@ package tui
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/newrelic/node-log-viewer/internal/common"
+	"github.com/newrelic/node-log-viewer/internal/database"
 	"github.com/rivo/tview"
 )
 
 const LINES_TABLE_COLUMN_COUNT = 5
 
 type LinesTableContent struct {
-	lines []common.Envelope
-
-	totalPossibleRows int
+	// Embedding the [tview.TableContentReadOnly] type allows us to implement
+	// only the read methods in order to satisfy the type implementation
+	// requirements.
+	tview.TableContentReadOnly
+	query *database.Query
 }
 
-func NewLinesTableContent(lines []common.Envelope) *LinesTableContent {
-	return &LinesTableContent{lines: lines}
+func NewLinesTableContent(query *database.Query) *LinesTableContent {
+	return &LinesTableContent{
+		query: query,
+	}
 }
 
-func (t *LinesTableContent) GetCell(row int, col int) *tview.TableCell {
-	if row < 0 || col < 0 {
-		return nil
-	}
-	if row >= len(t.lines) {
-		return nil
-	}
-
-	r := t.lines[row]
-	if col >= LINES_TABLE_COLUMN_COUNT {
+func (t *LinesTableContent) GetCell(rowNumber int, columnNumber int) *tview.TableCell {
+	// The sqlite windowing function `row_number()` starts numbering at 1.
+	// The tview widget starts numbering at 0.
+	// So we always need to increment the row number by 1.
+	envelope := t.query.GetRow(rowNumber + 1)
+	if envelope == nil {
 		return nil
 	}
 
 	cell := tview.NewTableCell("")
-	switch col {
+	switch columnNumber {
 	case 0: // Timestamp
 		cell.SetMaxWidth(23).
-			SetText(r.TimeStampString()).
+			SetText(envelope.TimeStampString()).
 			SetTextColor(tcell.ColorYellow)
 	case 1: // LogLevel
 		cell.SetMaxWidth(6).
-			SetText(r.Level().String()).
-			SetTextColor(t.levelColor(r.Level())).
+			SetText(envelope.Level().String()).
+			SetTextColor(t.levelColor(envelope.Level())).
 			SetAlign(tview.AlignLeft)
 	case 2: // SourceComponent
-		cell.SetMaxWidth(0).SetText(r.Component())
+		cell.SetMaxWidth(0).SetText(envelope.Component())
 	case 3: // Expand indicator
 		cell.SetMaxWidth(3).
-			SetText(t.expandIndicator(r)).
+			SetText(t.expandIndicator(envelope)).
 			SetTextColor(tcell.GetColor("#BB5FB9"))
 	case 4: // Log message
-		cell.SetExpansion(1).SetText(r.Message())
+		cell.SetExpansion(1).SetText(envelope.Message())
 	}
 
 	return cell
+}
+
+func (t *LinesTableContent) GetRowCount() int {
+	return t.query.NumRows()
+}
+
+func (t *LinesTableContent) GetColumnCount() int {
+	// We have columns:
+	// 1. Timestamp (23 characters wide): e.g `2024-07-03 08:10:41.199`
+	// 2. LogLevel name (6 characters wide): e.g. `Trace `
+	// 3. SourceComponent name (variable width): e.g. `error_tracer  `
+	// 4. Expand indicator (3 characters wide): e.g. ` » `
+	// 5. Log message (remainder of available screen width)
+	return LINES_TABLE_COLUMN_COUNT
 }
 
 func (t *LinesTableContent) levelColor(level common.LogLevel) tcell.Color {
@@ -90,29 +105,3 @@ func (t *LinesTableContent) expandIndicator(line common.Envelope) string {
 	}
 	return result
 }
-
-func (t *LinesTableContent) GetRowCount() int {
-	return len(t.lines)
-}
-
-func (t *LinesTableContent) GetColumnCount() int {
-	// We have columns:
-	// 1. Timestamp (23 characters wide): e.g `2024-07-03 08:10:41.199`
-	// 2. LogLevel name (6 characters wide): e.g. `Trace `
-	// 3. SourceComponent name (variable width): e.g. `error_tracer  `
-	// 4. Expand indicator (3 characters wide): e.g. ` » `
-	// 5. Log message (remainder of available screen width)
-	return LINES_TABLE_COLUMN_COUNT
-}
-
-func (t *LinesTableContent) SetCell(row int, col int, cell *tview.TableCell) {}
-
-func (t *LinesTableContent) RemoveRow(row int) {}
-
-func (t *LinesTableContent) RemoveColumn(col int) {}
-
-func (t *LinesTableContent) InsertRow(row int) {}
-
-func (t *LinesTableContent) InsertColumn(col int) {}
-
-func (t *LinesTableContent) Clear() {}

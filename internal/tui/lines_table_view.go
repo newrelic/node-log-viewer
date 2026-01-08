@@ -2,16 +2,27 @@ package tui
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/newrelic/node-log-viewer/internal/common"
 	"github.com/rivo/tview"
-	"strings"
 )
 
 func (t *TUI) initLinesTableView() {
 	table := tview.NewTable()
-	table.SetEvaluateAllRows(true) // For consistent column widths when scrolling.
-	table.SetContent(NewLinesTableContent(t.lines))
+
+	// The `.SetEvaluateAllRows(true)` tells tview, at a minimum, to calculate
+	// the column widths in all possible rows. This makes column widths consistent
+	// while scrolling the table. However, this is an expensive operation. It is
+	// prohibitively expensive for tables with a significant number of rows, and
+	// for "virtual tables." Unfortunately, we hit both of those. Fortunately,
+	// by defining our virtual table correctly, we don't really need this setting
+	// to get consistent rows. But we are leaving this here just in case we
+	// need to stop using a virtual table, and need the hint in the future.
+	// table.SetEvaluateAllRows(true)
+
+	table.SetContent(NewLinesTableContent(t.query))
 	table.SetSelectable(true, false) // Select by rows only.
 	table.SetSelectedStyle(
 		tcell.Style{}.
@@ -56,7 +67,7 @@ func (t *TUI) linesScrollStatus(row int, _ int) {
 // highlighted. This handler will determine the kind of the log line, prepare
 // the line for detailed view, and switch to the detail view.
 func (t *TUI) lineSelected(row int, _ int) {
-	line := t.lines[row]
+	line := t.query.GetRow(row)
 	lines := strings.Split(line.Message(), "\n")
 
 	switch line.Kind() {
