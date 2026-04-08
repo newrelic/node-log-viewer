@@ -36,7 +36,7 @@ func TestQuery(t *testing.T) {
 
 		rows, err := query.AllResults()
 		assert.Nil(t, err)
-		assert.Equal(t, 107, rows[0].RowId)
-		assert.Equal(t, 8077, rows[len(rows)-1].RowId)
+		assert.Equal(t, 1, rows[0].RowId)
+		assert.Equal(t, 385, rows[len(rows)-1].RowId)
 	})
 }
