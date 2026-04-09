@@ -22,17 +22,25 @@ import (
 )
 
 type Query struct {
-	db       *LogsDatabase
-	logger   *log.Logger
-	rowCache *arc.ARCCache[int, common.Envelope]
-	numRows  int
-	text     string
+	db           *LogsDatabase
+	logger       *log.Logger
+	rowCache     *arc.ARCCache[int, common.Envelope]
+	materialized bool
+	numRows      int
+	text         string
 }
 
 // AllResults issues the base query statement and returns the set of
 // [database.DbRow].
 func (q *Query) AllResults() ([]DbRow, error) {
-	rows, err := q.db.Connection.Query(q.text)
+	if q.materialized == false {
+		err := q.materialize()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	rows, err := q.db.Connection.Query(`select rowid, * from mv`)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query for all records: %w", err)
 	}
@@ -47,14 +55,21 @@ func (q *Query) AllResults() ([]DbRow, error) {
 }
 
 func (q *Query) GetRow(number int) common.Envelope {
+	if q.materialized == false {
+		err := q.materialize()
+		if err != nil {
+			q.logger.Error("could not fetch requested row", "error", err)
+			return nil
+		}
+	}
+
 	if q.rowCache.Contains(number) {
 		v, _ := q.rowCache.Get(number)
 		return v
 	}
 
 	statement := fmt.Sprintf(
-		`with cte as (%s) select * from cte where row_num = %d`,
-		q.text,
+		`select * from mv where row_num = %d`,
 		number,
 	)
 
@@ -87,16 +102,21 @@ func (q *Query) GetRow(number int) common.Envelope {
 }
 
 func (q *Query) NumRows() int {
+	if q.materialized == false {
+		err := q.materialize()
+		if err != nil {
+			q.logger.Error("cannot determine number of rows", "error", err)
+			return q.numRows
+		}
+	}
+
 	if q.numRows > 0 {
 		q.logger.Trace("returning cached number of rows", "numRows", q.numRows)
 		return q.numRows
 	}
 
 	q.logger.Trace("querying for number of rows in view")
-	statement := fmt.Sprintf(
-		`with cte as (%s) select count(*) from cte`,
-		q.text,
-	)
+	statement := "select count(*) from mv"
 	var numRows int
 	err := q.db.Connection.QueryRow(statement).Scan(&numRows)
 	switch {
@@ -113,13 +133,31 @@ func (q *Query) NumRows() int {
 	return numRows
 }
 
+func (q *Query) materialize() error {
+	statement := fmt.Sprintf(
+		`
+			drop table if exists mv;
+			drop index if exists mv_row_idx;
+			create table mv as %s;
+			create index mv_row_idx on mv (row_num);
+		`,
+		q.text,
+	)
+	_, err := q.db.Connection.Exec(statement)
+	if err != nil {
+		return fmt.Errorf("failed to materialize query: %w", err)
+	}
+	q.materialized = true
+	return nil
+}
+
 func SelectAllQuery(db *LogsDatabase, logger *log.Logger) *Query {
 	cache, _ := arc.NewARC[int, common.Envelope](1_024)
 	return &Query{
 		db:       db,
 		logger:   logger,
 		rowCache: cache,
-		text:     `select rowid, row_number() over (order by rowid) as row_num, * from logs_fts`,
+		text:     `select row_number() over (order by rowid) as row_num, * from logs_fts`,
 	}
 }
 
@@ -128,7 +166,7 @@ func SearchQuery(searchTerm string, db *LogsDatabase, logger *log.Logger) *Query
 	statement := fmt.Sprintf(
 		`
 			select
-				rowid, row_number() over (order by rowid) as row_num, *
+				row_number() over (order by rowid) as row_num, *
 			from logs_fts
 			where logs_fts match '%s'
 		`,

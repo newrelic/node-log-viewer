@@ -67,7 +67,9 @@ func (t *TUI) linesScrollStatus(row int, _ int) {
 // highlighted. This handler will determine the kind of the log line, prepare
 // the line for detailed view, and switch to the detail view.
 func (t *TUI) lineSelected(row int, _ int) {
-	line := t.query.GetRow(row)
+	// The UI references rows starting from 0.
+	// The database references rows starting from 1.
+	line := t.query.GetRow(row + 1)
 	lines := strings.Split(line.Message(), "\n")
 
 	switch line.Kind() {
