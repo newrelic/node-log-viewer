@@ -28,7 +28,8 @@ func (t *TUI) rootInputHandler(event *tcell.EventKey) *tcell.EventKey {
 
 	switch event.Rune() {
 	case 'h':
-		t.leftStatus.SetText("help invoked")
+		t.showModal(PAGE_HELP_FORM)
+		t.prevPageStatus = ""
 		return nil
 
 	case 'q':

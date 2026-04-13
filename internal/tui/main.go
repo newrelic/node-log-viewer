@@ -55,6 +55,9 @@ type TUI struct {
 	// between pages. This allows us to restore the status when we return to
 	// that page.
 	prevPageStatus string
+
+	// prevPage is used to cache the name of the previously loaded page.
+	prevPage string
 }
 
 func NewTUI(db *database.LogsDatabase, logger *log.Logger) TUI {
@@ -75,6 +78,7 @@ func NewTUI(db *database.LogsDatabase, logger *log.Logger) TUI {
 	tui.initLinesTableView()
 	tui.initGotoLineModal()
 	tui.initSearchModal()
+	tui.initHelpModal()
 	tui.initStatusBarView()
 	tui.initRootView()
 

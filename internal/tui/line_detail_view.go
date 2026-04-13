@@ -15,6 +15,12 @@ func (t *TUI) initLineDetailView() {
 func (t *TUI) lineDetailInputHandler(event *tcell.EventKey) *tcell.EventKey {
 	t.logger.Trace("received key event in line detail view", "key", event.Name(), "rune", event.Rune())
 
+	switch event.Rune() {
+	case 'h':
+		t.showModal(PAGE_HELP_FORM)
+		return event
+	}
+
 	switch event.Key() {
 	case tcell.KeyEsc, tcell.KeyBackspace, tcell.KeyBackspace2:
 		t.showPage(PAGE_LINES_TABLE, t.prevPageStatus)
