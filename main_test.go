@@ -24,7 +24,12 @@ func Test_parseLogFile(t *testing.T) {
 		reader, err := fs.Open("testdata/v0/good-line.log")
 		require.Nil(t, err)
 
-		err = parseLogFile(reader, testDb, nullLogger)
+		var fileSize int64 = 0
+		if info, err := reader.Stat(); err == nil {
+			fileSize = info.Size()
+		}
+
+		err = parseLogFile(reader, fileSize, testDb, nullLogger)
 		assert.Nil(t, err)
 
 		query := database.SelectAllQuery(testDb, nullLogger)
@@ -45,7 +50,12 @@ func Test_parseLogFile(t *testing.T) {
 		reader, err := fs.Open("testdata/v0/http-server.log")
 		require.Nil(t, err)
 
-		err = parseLogFile(reader, testDb, nullLogger)
+		var fileSize int64 = 0
+		if info, err := reader.Stat(); err == nil {
+			fileSize = info.Size()
+		}
+
+		err = parseLogFile(reader, fileSize, testDb, nullLogger)
 		assert.Nil(t, err)
 
 		query := database.SelectAllQuery(testDb, nullLogger)
@@ -65,7 +75,12 @@ func Test_parseLogFile(t *testing.T) {
 		reader, err := fs.Open("testdata/v0/exceedingly-long-line.log")
 		require.Nil(t, err)
 
-		err = parseLogFile(reader, testDb, nullLogger)
+		var fileSize int64 = 0
+		if info, err := reader.Stat(); err == nil {
+			fileSize = info.Size()
+		}
+
+		err = parseLogFile(reader, fileSize, testDb, nullLogger)
 		assert.Nil(t, err)
 
 		query := database.SelectAllQuery(testDb, nullLogger)
@@ -85,7 +100,12 @@ func Test_parseLogFile(t *testing.T) {
 		reader, err := fs.Open("testdata/node-warning-included.ndjson")
 		require.Nil(t, err)
 
-		err = parseLogFile(reader, testDb, nullLogger)
+		var fileSize int64 = 0
+		if info, err := reader.Stat(); err == nil {
+			fileSize = info.Size()
+		}
+
+		err = parseLogFile(reader, fileSize, testDb, nullLogger)
 		assert.Nil(t, err)
 
 		query := database.SelectAllQuery(testDb, nullLogger)
@@ -107,7 +127,12 @@ func Test_parseLogFile(t *testing.T) {
 		reader, err := fs.Open("testdata/k8s-interleaved.log")
 		require.Nil(t, err)
 
-		err = parseLogFile(reader, testDb, nullLogger)
+		var fileSize int64 = 0
+		if info, err := reader.Stat(); err == nil {
+			fileSize = info.Size()
+		}
+
+		err = parseLogFile(reader, fileSize, testDb, nullLogger)
 		assert.Nil(t, err)
 
 		query := database.SelectAllQuery(testDb, nullLogger)
@@ -128,7 +153,12 @@ func Test_parseLogFile(t *testing.T) {
 		reader, err := fs.Open("testdata/v0/broken-line.log")
 		require.Nil(t, err)
 
-		err = parseLogFile(reader, testDb, nullLogger)
+		var fileSize int64 = 0
+		if info, err := reader.Stat(); err == nil {
+			fileSize = info.Size()
+		}
+
+		err = parseLogFile(reader, fileSize, testDb, nullLogger)
 		assert.Nil(t, err)
 
 		query := database.SelectAllQuery(testDb, nullLogger)
@@ -148,7 +178,12 @@ func Test_parseLogFile(t *testing.T) {
 		reader, err := fs.Open("testdata/v0/http-server.log")
 		require.Nil(t, err)
 
-		err = parseLogFile(reader, testDb, nullLogger)
+		var fileSize int64 = 0
+		if info, err := reader.Stat(); err == nil {
+			fileSize = info.Size()
+		}
+
+		err = parseLogFile(reader, fileSize, testDb, nullLogger)
 		require.Nil(t, err)
 
 		writer := &strings.Builder{}

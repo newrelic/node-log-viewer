@@ -71,7 +71,6 @@ func run(args []string) error {
 	logger.Info("cache file created", "cache-file", db.DatabaseFile)
 	defer shutdownDatabase(db, logger)
 
-	// TODO: load input file in a gofunc so we can render a progress bar
 	hasCachedLogs, err := db.HasCachedLogs()
 	if err != nil {
 		logger.Error("could not verify cache", "error", err)
@@ -95,9 +94,24 @@ func run(args []string) error {
 			logger.Error("could not open log file", "error", err)
 			return err
 		}
-
 		defer inputFile.Close()
-		err = parseLogFile(inputFile, db, logger)
+
+		// We need to know the size of the file to be parsed so that we can
+		// display a progress indicator while reading the file. Given that we
+		// define `inputFile` as an `io.ReadCloser`, we don't know if we are
+		// receving a file or some other readable stream. So we use a type assertion
+		// to verify that `inputFile` has a `Stat()` method that conforms to the
+		// file interface. If it does, we use it to get the size of the file.
+		// If this fails for any reason, we just skip showing a progress indicator
+		// and proceed with silently loading the file.
+		var fileSize int64 = 0
+		if file, ok := inputFile.(interface{ Stat() (os.FileInfo, error) }); ok {
+			if info, err := file.Stat(); err == nil {
+				fileSize = info.Size()
+			}
+		}
+
+		err = parseLogFile(inputFile, fileSize, db, logger)
 		if err != nil {
 			logger.Debug("could not parse log file", "error", err)
 			return err
@@ -176,16 +190,52 @@ func openLogFile(filePath string, logger *log.Logger) (io.ReadCloser, error) {
 
 var matchLeadingK8sTimestamp = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3,}\s+?`)
 
+// progressReader wraps an io.Reader and displays progress as bytes are read.
+type progressReader struct {
+	reader      io.Reader
+	totalBytes  int64
+	bytesRead   int64
+	lastPercent int
+}
+
+func (pr *progressReader) Read(p []byte) (int, error) {
+	n, err := pr.reader.Read(p)
+	pr.bytesRead += int64(n)
+
+	if pr.totalBytes > 0 {
+		percent := int((pr.bytesRead * 100) / pr.totalBytes)
+		if percent != pr.lastPercent {
+			pr.lastPercent = percent
+			fmt.Fprintf(os.Stdout, "\rLoading log file: %d%%", percent)
+		}
+	}
+
+	return n, err
+}
+
 // parseLogFile reads through a theoretical agent NDJSON log file, validates
 // each line, and stores each validated line in the cache database.
-func parseLogFile(logFile io.Reader, db *database.LogsDatabase, logger *log.Logger) error {
+func parseLogFile(logFile io.Reader, fileSize int64, db *database.LogsDatabase, logger *log.Logger) error {
 	logger.Trace("starting to parse provided log file")
 	defer func() {
+		// Clear the progress indicator
+		if fileSize > 0 {
+			fmt.Fprintf(os.Stdout, "\r\033[K")
+		}
 		logger.Trace("finished parsing provided log file")
 	}()
 
+	// Wrap the reader with progress tracking if we have a file size.
+	var reader = logFile
+	if fileSize > 0 {
+		reader = &progressReader{
+			reader:     logFile,
+			totalBytes: fileSize,
+		}
+	}
+
 	scanBuffer := make([]byte, 0, 64*1_024)
-	scanner := bufio.NewScanner(logFile)
+	scanner := bufio.NewScanner(reader)
 	scanner.Buffer(scanBuffer, 1_024*1_024) // Scan up to 1MB.
 
 	bufferLimit := 1_000
