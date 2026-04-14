@@ -16,7 +16,7 @@ func (t *TUI) initStatusBarView() {
 
 	rightStatus := tview.NewTextView().
 		SetTextAlign(tview.AlignRight).
-		SetText("(s)earch | (h)elp").
+		SetText("(s)earch | (e)xport | (h)elp").
 		SetTextColor(tcell.ColorBlack)
 	rightStatus.SetBackgroundColor(tcell.GetColor("#73d4e9"))
 

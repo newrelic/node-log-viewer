@@ -11,6 +11,7 @@ var helpText = heredoc.Doc(`
 <down arrow>, <k>: Move selection down
 <enter>: View detail of selection
 <s>: Open search box
+<e>: Export current result set
 <g>: Open go to line box
 <esc>, <backspace>: Return to previous view
 <q>, <ctrl+c>: Quit the application

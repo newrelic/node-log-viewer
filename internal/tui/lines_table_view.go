@@ -41,6 +41,11 @@ func (t *TUI) linesTableInputHandler(event *tcell.EventKey) *tcell.EventKey {
 
 	// TODO: modals are retaining state between invocations, they shouldn't
 	switch event.Rune() {
+	case 'e':
+		t.logger.Trace("showing export lines modal")
+		t.showModal(PAGE_EXPORT_LINES)
+		return nil
+
 	case 'g':
 		t.logger.Trace("showing go to line modal")
 		t.showModal(PAGE_GOTO_LINE)
@@ -51,6 +56,7 @@ func (t *TUI) linesTableInputHandler(event *tcell.EventKey) *tcell.EventKey {
 		t.showModal(PAGE_SEARCH_FORM)
 		return nil
 	}
+
 	return event
 }
 
