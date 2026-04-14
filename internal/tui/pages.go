@@ -5,6 +5,7 @@ const (
 	PAGE_LINES_TABLE        = "lines_table"
 	PAGE_LINE_DETAIL        = "line_detail"
 	PAGE_SEARCH_FORM        = "search_form"
+	PAGE_HELP_FORM          = "help_form"
 )
 
 func (t *TUI) pageShouldCaptureGlobalInput(pageName string) bool {
@@ -16,6 +17,8 @@ func (t *TUI) pageShouldCaptureGlobalInput(pageName string) bool {
 	case PAGE_LINES_TABLE:
 		return true
 	case PAGE_SEARCH_FORM:
+		return false
+	case PAGE_HELP_FORM:
 		return false
 	}
 	return false

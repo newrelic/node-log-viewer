@@ -6,6 +6,11 @@ linters:
     - govet
     - gocritic
 
+  settings:
+    gocritic:
+      disabled-checks:
+        - singleCaseSwitch
+
 formatters:
   enable:
     - gofmt
