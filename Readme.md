@@ -82,6 +82,14 @@ nrlv newrelic_agent.log -c ./cache.sqlite -k
 If the `--keep-cache` switch is omitted, the cache file will be removed when
 the log viewer exits.
 
+### Exporting Filtered Lines
+
+The search feature acts as a filter. Which is to say, when a search is
+performed, all log lines that match the given search term(s) will replace
+the current listing of log lines. With this filter applied, the export
+feature can be used to create a new log file that contains only the
+filtered lines.
+
 ### Navigation
 
 The application has two distinct views: "lines view" and "line detail view."
@@ -96,6 +104,7 @@ in an easy to review format.
     * `down arrow`, `k`: move line selection up
     * `enter`: view detail of selected line
     * `s`: open search box
+    * `e`: export current set of lines to new file
     * `g`: open go to line box
     * `q`, `ctrl+c`: quit the application
 + Line detail view:
