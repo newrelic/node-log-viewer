@@ -189,6 +189,7 @@ func openLogFile(filePath string, logger *log.Logger) (io.ReadCloser, error) {
 }
 
 var matchLeadingK8sTimestamp = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3,}\s+?`)
+var matchLeadingAzureData = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\s+\[.+]\s+\{"v`)
 
 // progressReader wraps an io.Reader and displays progress as bytes are read.
 type progressReader struct {
@@ -267,16 +268,15 @@ func parseLogFile(logFile io.Reader, fileSize int64, db *database.LogsDatabase, 
 			// Skip empty lines in the source file.
 			continue
 		}
-		if matchLeadingK8sTimestamp.MatchString(sourceString) == true {
-			// Looks like the line starts with a k8s style timestamp. So we
-			// trim it off.
-			idx := strings.Index(sourceString, "{")
-			if idx == -1 {
-				logger.Warn("line with leading timestamp does not seem to be a log line", "line", sourceString)
+		if matchLeadingK8sTimestamp.MatchString(sourceString) == true ||
+			matchLeadingAzureData.MatchString(sourceString) == true {
+			// Looks like the line starts with some recognized leading garbage.
+			// trim it off and continue parsing.
+			trimmed, ok := removeLeadingGarbage(sourceString, logger)
+			if ok == false {
 				continue
 			}
-			logger.Debug("trimming leading timestamp", "line", sourceString)
-			sourceString = sourceString[idx:]
+			sourceString = trimmed
 		}
 		if sourceString[0:1] != "{" || sourceString[len(sourceString)-1:] != "}" {
 			// Skip lines that do not look like NDJSON.
@@ -316,6 +316,21 @@ func parseLogFile(logFile io.Reader, fileSize int64, db *database.LogsDatabase, 
 
 	logger.Debug("finished reading log lines from input")
 	return nil
+}
+
+// removeLeadingGarbage is used to remove any leading text on a log line
+// up to, but excluding, the first occurrence of a `{` character. The
+// result is the trimmed string. If the line could not be trimmed, an empty
+// string with a `false` indicator is returned.
+func removeLeadingGarbage(sourceString string, logger *log.Logger) (string, bool) {
+	idx := strings.Index(sourceString, "{")
+	if idx == -1 {
+		logger.Warn("line with leading timestamp does not seem to be a log line", "line", sourceString)
+		return "", false
+	}
+	logger.Debug("trimming leading timestamp", "line", sourceString)
+	result := sourceString[idx:]
+	return result, true
 }
 
 func dumpRemotePayloads(db *database.LogsDatabase, logger *log.Logger, writer io.Writer) error {
