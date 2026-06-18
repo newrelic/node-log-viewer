@@ -1,0 +1,8 @@
+2026-06-09T07:25:38   [Information]   {"v":0,"level":10,"name":"newrelic","hostname":"1d44fd20b7b5","pid":48,"time":"2026-06-09T07:25:38.401Z","msg":"Recorded memory","component":"system-metrics-sampler","rss":146919424,"heapTotal":108924928,"heapUsed":49111792,"external":3433223,"arrayBuffers":542792}
+2026-06-09T07:25:39   [Verbose]   Request successfully matched the route with name 'getLicensesById_SupportAPI' and template 'api/support/entitlements/licenses/{licenseId}'
+2026-06-09T07:25:39   [Verbose]   AuthenticationScheme: WebJobsAuthLevel was successfully authenticated.
+2026-06-09T07:25:39   [Verbose]   Authorization was successful.
+2026-06-09T07:25:39   [Information]   Executing 'Functions.getLicensesById_SupportAPI' (Reason='This function was programmatically called via the host APIs.', Id=28884498-fd0f-4228-ab69-0fe4eb38e2e9)
+2026-06-09T07:25:39   [Verbose]   Sending invocation id: '28884498-fd0f-4228-ab69-0fe4eb38e2e9
+2026-06-09T07:25:39   [Verbose]   Posting invocation id:28884498-fd0f-4228-ab69-0fe4eb38e2e9 on workerId:cfb0d703-7a6a-44a8-9327-b7d64598736c
+2026-06-09T07:25:39   [Information]   {"v":0,"level":20,"name":"newrelic","hostname":"1d44fd20b7b5","pid":48,"time":"2026-06-09T07:25:38.878Z","msg":"getLinkingMetadata with no active transaction"}

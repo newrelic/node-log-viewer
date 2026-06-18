@@ -142,6 +142,32 @@ func Test_parseLogFile(t *testing.T) {
 		assert.Equal(t, "Created segment", results[7].Message)
 	})
 
+	t.Run("handles azure-style prefixed lines", func(t *testing.T) {
+		testDb, err := database.New(database.DbParams{
+			DatabaseFilePath: "file::memory:",
+			DoMigration:      true,
+			Logger:           nullLogger,
+		})
+		require.Nil(t, err)
+
+		reader, err := fs.Open("testdata/azure-interleaved.log")
+		require.Nil(t, err)
+
+		var fileSize int64 = 0
+		if info, err := reader.Stat(); err == nil {
+			fileSize = info.Size()
+		}
+
+		err = parseLogFile(reader, fileSize, testDb, nullLogger)
+		assert.Nil(t, err)
+
+		query := database.SelectAllQuery(testDb, nullLogger)
+		results, err := query.AllResults()
+		assert.Nil(t, err)
+		assert.Equal(t, 2, len(results))
+		assert.Equal(t, "getLinkingMetadata with no active transaction", results[1].Message)
+	})
+
 	t.Run("handles malformed json", func(t *testing.T) {
 		testDb, err := database.New(database.DbParams{
 			DatabaseFilePath: "file::memory:",
