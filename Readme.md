@@ -137,3 +137,5 @@ cached SQLite file after you are done with it, or omit `-k` if you do not
 need to work with the SQLite file outside of the log viewer.
 
 [troubleshooting]: https://docs.newrelic.com/docs/apm/agents/nodejs-agent/troubleshooting/generate-trace-log-troubleshooting-nodejs/
+
+<!-- test: board automation check, safe to remove -->
